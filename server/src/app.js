@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
+import { connectDB } from './config/db.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { notFound } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -34,6 +35,20 @@ app.use(
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
+
+// On a serverless platform (Vercel), this file's default export is what actually gets
+// invoked per-request — server.js's connectDB()-then-listen() boot sequence never runs
+// there. Without this, the first request(s) on a cold start would race ahead of the DB
+// connection and every query would hang until Mongoose's buffering timeout. Cheap no-op
+// once connected (readyState check short-circuits), so this costs nothing once warm.
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Paystack webhook needs the raw body for signature verification —
 // must be mounted before the global express.json() body parser.
