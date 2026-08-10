@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Bevan&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #FAF7F2;
+  --color-cream: #F3EEE6;
+  --color-ink: #2B2622;
+  --color-stone-100: #EDE8E0;
+  --color-stone-300: #D8D2C7;
+  --color-stone-600: #6B6259;
+  --color-accent: #8A5A38;
+  --color-accent-dark: #6E4629;
+  --color-accent-tint: #F1E4D8;
+  --color-success: #5F7A5A;
+  --color-error: #A6483A;
+
+  --font-display: 'Bevan', ui-serif, Georgia, serif;
+  --font-sans: 'Bevan', ui-sans-serif, system-ui, sans-serif;
+
+  --container-8xl: 90rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .container-page {
+    max-width: var(--container-8xl);
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .container-page {
+      padding-inline: 3rem;
+    }
+  }
+}
