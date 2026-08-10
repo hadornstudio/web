@@ -1,7 +1,7 @@
 import { body, query } from 'express-validator';
 
 export const listInquiriesValidator = [
-  query('status').optional().isIn(['new', 'contacted', 'closed']),
+  query('status').optional({ checkFalsy: true }).isIn(['new', 'contacted', 'closed']),
 ];
 
 export const updateInquiryStatusValidator = [
