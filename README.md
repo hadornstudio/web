@@ -53,3 +53,4 @@ Prices are in Naira (₦) — this store's Paystack account is NGN-only.
 
 This is **Phase 1** of a phased build: backend API + core storefront (catalog, product detail, cart, checkout, accounts, reviews, coupons, custom-order inquiries). Motion/animation polish (GSAP/Three.js), the admin dashboard UI, and an optional promo-video generator are later phases — see `/Users/user/.claude/plans/clever-chasing-puffin.md` for the full plan.
 # web
+# web
