@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { protect, authorize } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import {
+  listProductsValidator,
   createProductValidator,
   updateProductValidator,
   adjustStockValidator,
@@ -20,7 +21,7 @@ import {
 
 const router = Router();
 
-router.get('/', listProducts);
+router.get('/', listProductsValidator, validate, listProducts);
 router.get('/featured', listFeaturedProducts);
 router.get('/admin/all', protect, authorize('admin'), listAllProductsAdmin);
 router.get('/:slug', getProduct);

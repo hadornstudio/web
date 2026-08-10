@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import AuthSplitLayout from '../components/common/AuthSplitLayout';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
+import GoogleSignInButton from '../components/common/GoogleSignInButton';
 
 const REGISTER_IMAGE = 'https://images.unsplash.com/photo-1659032882718-3e54e7da86ab?q=80&w=1200&auto=format&fit=crop';
 
@@ -13,6 +14,10 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const { register, registerStatus } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const authMessage = location.state?.authMessage;
+  const redirect = searchParams.get('redirect');
   const contentRef = useScrollReveal({ y: 16, stagger: 0.08, scrollTrigger: false });
 
   const handleSubmit = async (e) => {
@@ -20,7 +25,7 @@ export default function RegisterPage() {
     setError('');
     try {
       await register(form);
-      navigate('/account');
+      navigate(redirect || '/account', { state: location.state });
     } catch (err) {
       const apiError = err.response?.data;
       setError(apiError?.errors?.[0]?.message || apiError?.message || 'Something went wrong. Please try again.');
@@ -32,6 +37,12 @@ export default function RegisterPage() {
       <div ref={contentRef}>
         <h1 className="font-display text-3xl">Create an Account</h1>
         <p className="mt-2 text-sm text-stone-600">Save your addresses, track orders, and build a wishlist.</p>
+
+        {authMessage && (
+          <p className="mt-4 border border-accent bg-accent-tint px-4 py-2.5 text-sm text-accent-dark">
+            {authMessage}
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
           <Input
@@ -61,9 +72,17 @@ export default function RegisterPage() {
           </Button>
         </form>
 
+        <div className="mt-6">
+          <GoogleSignInButton />
+        </div>
+
         <p className="mt-6 text-sm text-stone-600">
           Already have an account?{' '}
-          <Link to="/login" className="text-accent hover:text-accent-dark">
+          <Link
+            to={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`}
+            state={location.state}
+            className="text-accent hover:text-accent-dark"
+          >
             Sign in
           </Link>
         </p>

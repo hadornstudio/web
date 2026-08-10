@@ -1,18 +1,41 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { gsap, EASE, prefersReducedMotion } from '../../lib/motion/gsapConfig';
 import { useGalleryLikes } from '../../hooks/useGallery';
 import { useAuthStore } from '../../store/useAuthStore';
+import { buildLoginRedirect } from '../../utils/authRedirect';
 
 export default function GalleryLikeButton({ itemId, likesCount = 0, className = '' }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const { isLiked, toggleLike } = useGalleryLikes();
+  const { isLiked, toggleLike, isLoading } = useGalleryLikes();
   const btnRef = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation();
   const liked = isLiked(itemId);
+  const autoLikeFired = useRef(false);
+
+  // Completes a like that was interrupted by a login redirect — fires once, only for
+  // the exact item the user originally tried to like, and only once we actually know
+  // their real liked/unliked state (isLoading guards against a stale false negative).
+  useEffect(() => {
+    if (autoLikeFired.current) return;
+    if (!isAuthenticated || isLoading) return;
+    if (location.state?.likeGalleryItemId !== itemId) return;
+    autoLikeFired.current = true;
+    if (!liked) toggleLike(itemId);
+    navigate(location.pathname + location.search, { replace: true, state: {} });
+  }, [isAuthenticated, isLoading, liked, itemId, location, navigate, toggleLike]);
 
   const handleClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) return;
+
+    if (!isAuthenticated) {
+      navigate(buildLoginRedirect(location), {
+        state: { authMessage: 'Sign in or create an account to like this piece.', likeGalleryItemId: itemId },
+      });
+      return;
+    }
 
     if (!prefersReducedMotion() && btnRef.current) {
       gsap
@@ -29,8 +52,7 @@ export default function GalleryLikeButton({ itemId, likesCount = 0, className = 
       ref={btnRef}
       type="button"
       onClick={handleClick}
-      disabled={!isAuthenticated}
-      className={`inline-flex items-center gap-1.5 text-sm transition-colors disabled:opacity-40 ${
+      className={`inline-flex items-center gap-1.5 text-sm transition-colors ${
         liked ? 'text-accent' : 'text-stone-600 hover:text-accent'
       } ${className}`}
       aria-label="Like this piece"

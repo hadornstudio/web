@@ -30,7 +30,15 @@ const userSchema = new Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Invalid email format'],
     },
-    password: { type: String, required: true, minlength: 8, select: false },
+    // Only required for password-based accounts — a Google account never sets this,
+    // so login for those users can only ever succeed through the Google verify flow.
+    password: {
+      type: String,
+      required: function passwordRequired() { return !this.googleId; },
+      minlength: 8,
+      select: false,
+    },
+    googleId: { type: String, unique: true, sparse: true, select: false },
     role: { type: String, enum: ['customer', 'admin'], default: 'customer' },
     addresses: [addressSchema],
     wishlist: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
@@ -48,13 +56,15 @@ const userSchema = new Schema(
 );
 
 userSchema.pre('save', async function hashPassword(next) {
-  if (!this.isModified('password')) return next();
+  // Google-only accounts never set a password — nothing to hash.
+  if (!this.password || !this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
 userSchema.methods.comparePassword = function comparePassword(candidate) {
+  if (!this.password) return Promise.resolve(false);
   return bcrypt.compare(candidate, this.password);
 };
 

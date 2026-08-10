@@ -15,6 +15,11 @@ export function useAuth() {
     onSuccess: (res) => setSession(res.data.user, res.data.token),
   });
 
+  const googleMutation = useMutation({
+    mutationFn: authApi.google,
+    onSuccess: (res) => setSession(res.data.user, res.data.token),
+  });
+
   const logout = () => {
     authApi.logout().catch(() => {});
     clearSession();
@@ -29,6 +34,8 @@ export function useAuth() {
     loginStatus: loginMutation,
     register: registerMutation.mutateAsync,
     registerStatus: registerMutation,
+    googleAuth: googleMutation.mutateAsync,
+    googleAuthStatus: googleMutation,
     logout,
   };
 }

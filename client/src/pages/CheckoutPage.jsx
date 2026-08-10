@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGSAP } from '@gsap/react';
 import { useCartStore } from '../store/useCartStore';
+import { useShippingQuote } from '../hooks/useShipping';
 import { calculateEstimatedTotals } from '../utils/calculateEstimatedTotals';
 import { gsap, EASE, DURATION, prefersReducedMotion } from '../lib/motion/gsapConfig';
 import CheckoutSteps from '../components/checkout/CheckoutSteps';
@@ -36,6 +37,14 @@ export default function CheckoutPage() {
     { dependencies: [step], scope: stepContentRef }
   );
 
+  const cartItems = items.map((i) => ({ productId: i.productId, quantity: i.quantity }));
+  const { data: shippingQuote, isLoading: isQuoting } = useShippingQuote({
+    state: address?.state,
+    country: address?.country,
+    subtotal,
+    items: cartItems,
+  });
+
   if (items.length === 0) {
     return (
       <div className="container-page py-24">
@@ -48,7 +57,11 @@ export default function CheckoutPage() {
     );
   }
 
-  const totals = calculateEstimatedTotals({ subtotal, discountAmount: coupon?.discountAmount || 0 });
+  const totals = calculateEstimatedTotals({
+    subtotal,
+    discountAmount: coupon?.discountAmount || 0,
+    shippingCost: shippingQuote?.shippingCost ?? 0,
+  });
 
   const handleOrderCreated = (order) => {
     clearCart();
@@ -72,6 +85,8 @@ export default function CheckoutPage() {
             subtotal={subtotal}
             totals={totals}
             coupon={coupon}
+            shippingQuote={shippingQuote}
+            isQuoting={isQuoting}
             onApplyCoupon={setCoupon}
             onRemoveCoupon={() => setCoupon(null)}
             onBack={() => setStep(0)}

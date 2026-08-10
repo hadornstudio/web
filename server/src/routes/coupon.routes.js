@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { protect, authorize } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { createCouponValidator, validateCouponValidator } from '../validators/coupon.validators.js';
+import { createCouponValidator, updateCouponValidator, validateCouponValidator } from '../validators/coupon.validators.js';
 import {
   validateCoupon,
   listCoupons,
@@ -15,7 +15,7 @@ const router = Router();
 router.post('/validate', protect, validateCouponValidator, validate, validateCoupon);
 router.get('/', protect, authorize('admin'), listCoupons);
 router.post('/', protect, authorize('admin'), createCouponValidator, validate, createCoupon);
-router.put('/:id', protect, authorize('admin'), updateCoupon);
+router.put('/:id', protect, authorize('admin'), updateCouponValidator, validate, updateCoupon);
 router.delete('/:id', protect, authorize('admin'), deleteCoupon);
 
 export default router;

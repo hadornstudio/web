@@ -4,11 +4,12 @@ import Category from '../models/Category.js';
 import Order from '../models/Order.js';
 import { ApiError } from './ApiError.js';
 import { calculateOrderTotals } from './calculateOrderTotals.js';
+import { resolveShippingCost } from './resolveShippingCost.js';
 
 // Re-derives line items, stock availability, and totals directly from the database —
 // never trusts prices or availability sent by the client. Shared by payment-intent
 // creation and order creation so the amount charged always matches the amount recorded.
-export async function resolveCartItems({ items, couponCode, userId }) {
+export async function resolveCartItems({ items, couponCode, userId, shippingAddress }) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new ApiError(422, 'Cart must contain at least one item');
   }
@@ -51,6 +52,8 @@ export async function resolveCartItems({ items, couponCode, userId }) {
     });
   }
 
+  const subtotal = resolvedItems.reduce((sum, i) => sum + i.lineTotal, 0);
+
   let discountAmount = 0;
   let couponSnapshot;
 
@@ -58,7 +61,6 @@ export async function resolveCartItems({ items, couponCode, userId }) {
     const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
     if (!coupon) throw new ApiError(404, 'Coupon code not found');
 
-    const subtotal = resolvedItems.reduce((sum, i) => sum + i.lineTotal, 0);
     const userRedemptionCount = await Order.countDocuments({
       user: userId,
       'coupon.code': coupon.code,
@@ -79,7 +81,17 @@ export async function resolveCartItems({ items, couponCode, userId }) {
     couponSnapshot = { code: coupon.code, type: coupon.type, value: coupon.value, discountAmount, couponId: coupon._id };
   }
 
-  const totals = calculateOrderTotals({ items: resolvedItems, discountAmount });
+  if (!shippingAddress) {
+    throw new ApiError(422, 'A shipping address is required');
+  }
 
-  return { resolvedItems, coupon: couponSnapshot, ...totals };
+  const shippingItems = resolvedItems.map((i) => ({ title: i.title, unitPrice: i.unitPrice, quantity: i.quantity, weight: i.productDoc.weight }));
+  const shippingResult = await resolveShippingCost({ subtotal, items: shippingItems, shippingAddress });
+  if (shippingResult.shippingCost == null) {
+    throw new ApiError(422, 'Shipping is not available for this address yet. Please contact us to place this order.');
+  }
+
+  const totals = calculateOrderTotals({ items: resolvedItems, discountAmount, shippingCost: shippingResult.shippingCost });
+
+  return { resolvedItems, coupon: couponSnapshot, shippingMethod: shippingResult.method, ...totals };
 }

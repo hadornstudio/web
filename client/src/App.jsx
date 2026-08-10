@@ -37,6 +37,7 @@ import AdminPromosListPage from './pages/admin/AdminPromosListPage';
 import AdminPromoFormPage from './pages/admin/AdminPromoFormPage';
 import AdminAdsListPage from './pages/admin/AdminAdsListPage';
 import AdminAdFormPage from './pages/admin/AdminAdFormPage';
+import AdminShippingPage from './pages/admin/AdminShippingPage';
 
 export default function App() {
   return (
@@ -90,6 +91,7 @@ export default function App() {
             <Route path="ads" element={<AdminAdsListPage />} />
             <Route path="ads/new" element={<AdminAdFormPage />} />
             <Route path="ads/:id/edit" element={<AdminAdFormPage />} />
+            <Route path="shipping" element={<AdminShippingPage />} />
           </Route>
         </Route>
       </Routes>

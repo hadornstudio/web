@@ -4,6 +4,8 @@ export const initializePaymentValidator = [
   body('items').isArray({ min: 1 }).withMessage('items must be a non-empty array'),
   body('items.*.productId').isMongoId().withMessage('Each item needs a valid productId'),
   body('items.*.quantity').isInt({ min: 1 }).withMessage('Each item needs a quantity of at least 1'),
+  body('shippingAddress.state').trim().notEmpty(),
+  body('shippingAddress.country').trim().notEmpty(),
 ];
 
 export const createOrderValidator = [

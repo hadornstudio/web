@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import mongoSanitize from 'express-mongo-sanitize';
 
 import { connectDB } from './config/db.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
@@ -22,6 +23,7 @@ import analyticsRoutes from './routes/analytics.routes.js';
 import galleryRoutes from './routes/gallery.routes.js';
 import promoRoutes from './routes/promo.routes.js';
 import adRoutes from './routes/ad.routes.js';
+import shippingRoutes from './routes/shipping.routes.js';
 
 const app = express();
 
@@ -55,6 +57,12 @@ app.use(async (req, res, next) => {
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), webhookHandler);
 
 app.use(express.json());
+
+// Strips any key starting with '$' or containing '.' from req.body/query/params —
+// blocks MongoDB operator injection (e.g. ?category[$ne]=null) on routes that build a
+// Mongoose filter straight from user input without express-validator in front of it.
+app.use(mongoSanitize());
+
 app.use(generalLimiter);
 
 app.get('/api/health', (req, res) => res.json({ success: true, message: 'Hadorn API is running' }));
@@ -73,6 +81,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/promos', promoRoutes);
 app.use('/api/ads', adRoutes);
+app.use('/api/shipping', shippingRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -18,3 +18,7 @@ export const forgotPasswordValidator = [
 export const resetPasswordValidator = [
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
 ];
+
+export const googleAuthValidator = [
+  body('credential').isString().notEmpty().withMessage('Google credential is required'),
+];

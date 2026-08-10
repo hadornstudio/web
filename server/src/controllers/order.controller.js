@@ -12,7 +12,7 @@ export const createOrder = asyncHandler(async (req, res) => {
   if (existingOrder) throw new ApiError(409, 'This payment has already been used for an order');
 
   const { resolvedItems, coupon, subtotal, shippingCost, tax, discountTotal, total } =
-    await resolveCartItems({ items, couponCode, userId: req.user._id });
+    await resolveCartItems({ items, couponCode, userId: req.user._id, shippingAddress });
 
   const transaction = await verifyTransaction(reference);
   if (transaction.status !== 'success') {

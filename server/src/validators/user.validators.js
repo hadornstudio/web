@@ -23,4 +23,16 @@ export const addressValidator = [
   body('state').trim().notEmpty().withMessage('State is required'),
   body('postalCode').trim().notEmpty().withMessage('Postal code is required'),
   body('country').optional().trim(),
+  body('label').optional().trim(),
+  body('line2').optional().trim(),
+  body('phone').optional().trim(),
+  body('isDefault').optional().isBoolean(),
+];
+
+export const updateUserRoleValidator = [
+  body('role').isIn(['customer', 'admin']).withMessage('role must be customer or admin'),
+];
+
+export const updateUserStatusValidator = [
+  body('isActive').isBoolean().withMessage('isActive must be a boolean'),
 ];

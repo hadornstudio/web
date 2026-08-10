@@ -5,8 +5,8 @@ import { resolveCartItems } from '../utils/resolveCartItems.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 
 export const initializePayment = asyncHandler(async (req, res) => {
-  const { items, couponCode } = req.body;
-  const { total } = await resolveCartItems({ items, couponCode, userId: req.user._id });
+  const { items, couponCode, shippingAddress } = req.body;
+  const { total } = await resolveCartItems({ items, couponCode, userId: req.user._id, shippingAddress });
 
   const amountInKobo = Math.round(total * 100);
 

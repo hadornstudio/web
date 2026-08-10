@@ -1,4 +1,12 @@
-import { body } from 'express-validator';
+import { body, query } from 'express-validator';
+
+export const listInquiriesValidator = [
+  query('status').optional().isIn(['new', 'contacted', 'closed']),
+];
+
+export const updateInquiryStatusValidator = [
+  body('status').isIn(['new', 'contacted', 'closed']).withMessage('Invalid status'),
+];
 
 export const createInquiryValidator = [
   body('name').trim().notEmpty().withMessage('Name is required'),

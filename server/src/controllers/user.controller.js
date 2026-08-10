@@ -41,6 +41,8 @@ export const addAddress = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: { addresses: req.user.addresses } });
 });
 
+const ADDRESS_FIELDS = ['label', 'fullName', 'line1', 'line2', 'city', 'state', 'postalCode', 'country', 'phone', 'isDefault'];
+
 export const updateAddress = asyncHandler(async (req, res) => {
   const address = req.user.addresses.id(req.params.addressId);
   if (!address) throw new ApiError(404, 'Address not found');
@@ -48,7 +50,12 @@ export const updateAddress = asyncHandler(async (req, res) => {
   if (req.body.isDefault) {
     req.user.addresses.forEach((a) => { a.isDefault = false; });
   }
-  Object.assign(address, req.body);
+  // Copy only known fields rather than Object.assign(address, req.body) — keeps this
+  // immune to extra/unexpected keys in the request body regardless of how the address
+  // subdocument's schema evolves later.
+  for (const field of ADDRESS_FIELDS) {
+    if (req.body[field] !== undefined) address[field] = req.body[field];
+  }
   await req.user.save();
   res.json({ success: true, data: { addresses: req.user.addresses } });
 });
@@ -161,7 +168,7 @@ export const getRecommendations = asyncHandler(async (req, res) => {
 
 export const listUsersAdmin = asyncHandler(async (req, res) => {
   const users = await User.find().sort({ createdAt: -1 });
-  res.json({ success: true, data: { users } });
+  res.json({ success: true, data: { users: users.map((u) => u.toSafeJSON()) } });
 });
 
 export const updateUserRole = asyncHandler(async (req, res) => {

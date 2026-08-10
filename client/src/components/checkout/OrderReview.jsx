@@ -1,7 +1,8 @@
 import { formatCurrency } from '../../utils/formatCurrency';
 import CouponInput from './CouponInput';
 
-export default function OrderReview({ items, address, subtotal, totals, coupon, onApplyCoupon, onRemoveCoupon, onBack, onContinue }) {
+export default function OrderReview({ items, address, subtotal, totals, coupon, shippingQuote, isQuoting, onApplyCoupon, onRemoveCoupon, onBack, onContinue }) {
+  const shippingUnavailable = !isQuoting && shippingQuote?.method === 'unavailable';
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -40,17 +41,32 @@ export default function OrderReview({ items, address, subtotal, totals, coupon, 
         {totals.discountTotal > 0 && (
           <div className="flex justify-between py-1 text-accent"><span>Discount</span><span>−{formatCurrency(totals.discountTotal)}</span></div>
         )}
-        <div className="flex justify-between py-1"><span className="text-stone-600">Shipping</span><span>{totals.shippingCost === 0 ? 'Free' : formatCurrency(totals.shippingCost)}</span></div>
+        <div className="flex justify-between py-1">
+          <span className="text-stone-600">Shipping</span>
+          <span>
+            {isQuoting ? 'Calculating…' : shippingUnavailable ? '—' : totals.shippingCost === 0 ? 'Free' : formatCurrency(totals.shippingCost)}
+          </span>
+        </div>
+        {shippingQuote?.carrierName && (
+          <p className="pb-1 text-right text-xs text-stone-600">via {shippingQuote.carrierName}</p>
+        )}
         <div className="flex justify-between py-1"><span className="text-stone-600">Tax (VAT)</span><span>{formatCurrency(totals.tax)}</span></div>
         <div className="mt-2 flex justify-between border-t border-stone-300 pt-2 text-base text-ink">
           <span>Total</span><span className="font-medium">{formatCurrency(totals.total)}</span>
         </div>
       </div>
 
+      {shippingUnavailable && (
+        <p className="text-sm text-error">
+          We can't calculate shipping to this address yet. Please contact us to place this order, or try a different address.
+        </p>
+      )}
+
       <button
         type="button"
         onClick={onContinue}
-        className="bg-accent px-6 py-3 text-sm uppercase tracking-wide text-paper hover:bg-accent-dark"
+        disabled={isQuoting || shippingUnavailable}
+        className="bg-accent px-6 py-3 text-sm uppercase tracking-wide text-paper hover:bg-accent-dark disabled:opacity-40"
       >
         Continue to Payment
       </button>

@@ -8,6 +8,19 @@ export const createCouponValidator = [
   body('conditions.minQuantityCategory').optional({ checkFalsy: true }).isMongoId(),
 ];
 
+export const updateCouponValidator = [
+  body('code').optional().trim().notEmpty(),
+  body('type').optional().isIn(['flat', 'percent']),
+  body('value').optional().isFloat({ min: 0 }),
+  body('minOrderValue').optional().isFloat({ min: 0 }),
+  body('maxDiscountAmount').optional({ checkFalsy: true }).isFloat({ min: 0 }),
+  body('usageLimit').optional({ checkFalsy: true }).isInt({ min: 0 }),
+  body('perUserLimit').optional().isInt({ min: 1 }),
+  body('isActive').optional().isBoolean(),
+  body('conditions.minQuantity').optional({ checkFalsy: true }).isInt({ min: 1 }),
+  body('conditions.minQuantityCategory').optional({ checkFalsy: true }).isMongoId(),
+];
+
 export const validateCouponValidator = [
   body('code').trim().notEmpty().withMessage('Code is required'),
   body('subtotal').isFloat({ min: 0 }).withMessage('subtotal must be a non-negative number'),

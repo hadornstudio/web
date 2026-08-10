@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { usersApi } from '../../api/users';
+import { NIGERIAN_STATES } from '../../constants/nigerianStates';
+import { COUNTRIES } from '../../constants/countries';
 import Input from '../common/Input';
+import Select from '../common/Select';
 import Button from '../common/Button';
 
 const EMPTY_ADDRESS = { fullName: '', line1: '', line2: '', city: '', state: '', postalCode: '', country: 'Nigeria', phone: '' };
@@ -75,9 +78,22 @@ export default function ShippingForm({ onContinue }) {
           <Input label="Address Line 1" required className="sm:col-span-2" value={form.line1} onChange={(e) => setForm({ ...form, line1: e.target.value })} />
           <Input label="Address Line 2 (optional)" className="sm:col-span-2" value={form.line2} onChange={(e) => setForm({ ...form, line2: e.target.value })} />
           <Input label="City" required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-          <Input label="State" required value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
+          {form.country === 'Nigeria' ? (
+            <Select label="State" required value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })}>
+              <option value="">Select a state…</option>
+              {NIGERIAN_STATES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </Select>
+          ) : (
+            <Input label="State / Province" required value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
+          )}
           <Input label="Postal Code" required value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} />
-          <Input label="Country" required value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+          <Select label="Country" required value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value, state: '' })}>
+            {COUNTRIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </Select>
           <Input label="Phone (optional)" className="sm:col-span-2" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
 
           {addresses.length > 0 && (

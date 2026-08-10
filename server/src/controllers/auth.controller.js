@@ -1,8 +1,11 @@
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
 import { generateToken } from '../utils/generateToken.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
+
+const googleClient = process.env.GOOGLE_CLIENT_ID ? new OAuth2Client(process.env.GOOGLE_CLIENT_ID) : null;
 
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
@@ -23,6 +26,55 @@ export const login = asyncHandler(async (req, res) => {
   if (!user || !(await user.comparePassword(password))) {
     throw new ApiError(401, 'Invalid email or password');
   }
+  if (!user.isActive) throw new ApiError(403, 'This account has been deactivated');
+
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  const token = generateToken(user._id);
+  res.json({ success: true, data: { user: user.toSafeJSON(), token } });
+});
+
+export const googleAuth = asyncHandler(async (req, res) => {
+  if (!googleClient) throw new ApiError(500, 'Google sign-in is not configured');
+
+  const { credential } = req.body;
+
+  // verifyIdToken checks the signature against Google's public keys, the audience
+  // (must match our client ID), issuer, and expiry — a forged/expired/wrong-audience
+  // token throws here rather than silently passing through.
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: process.env.GOOGLE_CLIENT_ID });
+    payload = ticket.getPayload();
+  } catch {
+    throw new ApiError(401, 'Invalid Google credential');
+  }
+
+  if (!payload?.email_verified) {
+    throw new ApiError(401, 'Google account email is not verified');
+  }
+
+  let user = await User.findOne({ googleId: payload.sub }).select('+googleId');
+
+  if (!user) {
+    // Same email as an existing password account — link the two rather than creating a
+    // duplicate. Safe to trust here because Google (not the client) verified the email.
+    user = await User.findOne({ email: payload.email }).select('+googleId');
+    if (user) {
+      user.googleId = payload.sub;
+      await user.save();
+    }
+  }
+
+  if (!user) {
+    user = await User.create({
+      name: payload.name || payload.email.split('@')[0],
+      email: payload.email,
+      googleId: payload.sub,
+    });
+  }
+
   if (!user.isActive) throw new ApiError(403, 'This account has been deactivated');
 
   user.lastLoginAt = new Date();

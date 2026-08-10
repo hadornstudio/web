@@ -29,7 +29,7 @@ export function useGalleryLikes() {
     },
   });
 
-  return { isLiked, toggleLike: toggleMutation.mutate };
+  return { isLiked, toggleLike: toggleMutation.mutate, isLoading: query.isLoading };
 }
 
 // --- Admin ---

@@ -14,6 +14,7 @@ const LINKS = [
   { to: '/admin/coupons', label: 'Coupons' },
   { to: '/admin/promos', label: 'Promos' },
   { to: '/admin/ads', label: 'Ad Campaigns' },
+  { to: '/admin/shipping', label: 'Shipping' },
   { to: '/admin/inquiries', label: 'Inquiries' },
   { to: '/admin/gallery', label: 'Gallery' },
   { to: '/admin/gallery-likes', label: 'Interested Customers' },

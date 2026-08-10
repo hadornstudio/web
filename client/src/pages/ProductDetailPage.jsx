@@ -10,6 +10,7 @@ import PriceTag from '../components/common/PriceTag';
 import StarRating from '../components/common/StarRating';
 import Button from '../components/common/Button';
 import WishlistHeartButton from '../components/common/WishlistHeartButton';
+import LocalShippingEstimate from '../components/product/LocalShippingEstimate';
 import Spinner from '../components/common/Spinner';
 import ProductGrid from '../components/product/ProductGrid';
 import ReviewList from '../components/reviews/ReviewList';
@@ -112,6 +113,8 @@ export default function ProductDetailPage() {
               <span className="text-ink">Materials: </span>{product.materials.join(', ')}
             </p>
           )}
+
+          <LocalShippingEstimate />
 
           <div className="mt-10 border-t border-stone-300 pt-8">
             <h2 className="font-display text-xl">Description</h2>

@@ -1,0 +1,57 @@
+// name + ISO 3166-1 alpha-2 code — Terminal Africa's address API requires the ISO2 code,
+// and matching against a free-text country field reliably requires a controlled list on
+// both ends rather than guessing at what the customer typed.
+export const COUNTRIES = [
+  { name: 'Nigeria', code: 'NG' },
+  { name: 'United States', code: 'US' },
+  { name: 'United Kingdom', code: 'GB' },
+  { name: 'Canada', code: 'CA' },
+  { name: 'Ghana', code: 'GH' },
+  { name: 'Kenya', code: 'KE' },
+  { name: 'South Africa', code: 'ZA' },
+  { name: 'Germany', code: 'DE' },
+  { name: 'France', code: 'FR' },
+  { name: 'Netherlands', code: 'NL' },
+  { name: 'Belgium', code: 'BE' },
+  { name: 'Ireland', code: 'IE' },
+  { name: 'Spain', code: 'ES' },
+  { name: 'Italy', code: 'IT' },
+  { name: 'Portugal', code: 'PT' },
+  { name: 'Switzerland', code: 'CH' },
+  { name: 'Austria', code: 'AT' },
+  { name: 'Sweden', code: 'SE' },
+  { name: 'Norway', code: 'NO' },
+  { name: 'Denmark', code: 'DK' },
+  { name: 'Finland', code: 'FI' },
+  { name: 'Poland', code: 'PL' },
+  { name: 'United Arab Emirates', code: 'AE' },
+  { name: 'Saudi Arabia', code: 'SA' },
+  { name: 'Qatar', code: 'QA' },
+  { name: 'India', code: 'IN' },
+  { name: 'China', code: 'CN' },
+  { name: 'Japan', code: 'JP' },
+  { name: 'South Korea', code: 'KR' },
+  { name: 'Singapore', code: 'SG' },
+  { name: 'Malaysia', code: 'MY' },
+  { name: 'Australia', code: 'AU' },
+  { name: 'New Zealand', code: 'NZ' },
+  { name: 'Brazil', code: 'BR' },
+  { name: 'Mexico', code: 'MX' },
+  { name: 'Egypt', code: 'EG' },
+  { name: 'Morocco', code: 'MA' },
+  { name: 'Ethiopia', code: 'ET' },
+  { name: 'Rwanda', code: 'RW' },
+  { name: 'Uganda', code: 'UG' },
+  { name: 'Tanzania', code: 'TZ' },
+  { name: 'Cameroon', code: 'CM' },
+  { name: "Cote d'Ivoire", code: 'CI' },
+  { name: 'Senegal', code: 'SN' },
+  { name: 'Togo', code: 'TG' },
+  { name: 'Benin', code: 'BJ' },
+];
+
+export const COUNTRY_CODE_BY_NAME = Object.fromEntries(COUNTRIES.map((c) => [c.name.toLowerCase(), c.code]));
+
+export function isNigeria(countryName) {
+  return (countryName || '').trim().toLowerCase() === 'nigeria';
+}

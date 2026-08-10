@@ -1,18 +1,40 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { gsap, EASE, prefersReducedMotion } from '../../lib/motion/gsapConfig';
 import { useWishlist } from '../../hooks/useWishlist';
 import { useAuthStore } from '../../store/useAuthStore';
+import { buildLoginRedirect } from '../../utils/authRedirect';
 
 export default function WishlistHeartButton({ productId, className = '' }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const { isWishlisted, add, remove } = useWishlist();
+  const { isWishlisted, add, remove, isLoading } = useWishlist();
   const btnRef = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation();
   const wishlisted = isWishlisted(productId);
+  const autoAddFired = useRef(false);
+
+  // Same continuity pattern as GalleryLikeButton — completes the save that was
+  // interrupted by a login redirect, once, only for the exact product in question.
+  useEffect(() => {
+    if (autoAddFired.current) return;
+    if (!isAuthenticated || isLoading) return;
+    if (location.state?.wishlistProductId !== productId) return;
+    autoAddFired.current = true;
+    if (!wishlisted) add(productId);
+    navigate(location.pathname + location.search, { replace: true, state: {} });
+  }, [isAuthenticated, isLoading, wishlisted, productId, location, navigate, add]);
 
   const handleClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) return;
+
+    if (!isAuthenticated) {
+      navigate(buildLoginRedirect(location), {
+        state: { authMessage: 'Sign in or create an account to save this piece.', wishlistProductId: productId },
+      });
+      return;
+    }
 
     if (!prefersReducedMotion() && btnRef.current) {
       gsap
@@ -30,8 +52,7 @@ export default function WishlistHeartButton({ productId, className = '' }) {
       ref={btnRef}
       type="button"
       onClick={handleClick}
-      disabled={!isAuthenticated}
-      className={`inline-flex items-center justify-center border p-2.5 transition-colors disabled:opacity-40 ${
+      className={`inline-flex items-center justify-center border p-2.5 transition-colors ${
         wishlisted
           ? 'border-accent text-accent'
           : 'border-stone-300 text-stone-600 hover:border-accent hover:text-accent'

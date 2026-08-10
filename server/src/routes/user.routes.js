@@ -6,6 +6,8 @@ import {
   changePasswordValidator,
   addressValidator,
   updatePreferencesValidator,
+  updateUserRoleValidator,
+  updateUserStatusValidator,
 } from '../validators/user.validators.js';
 import {
   updateProfile,
@@ -34,7 +36,7 @@ router.get('/me/recommendations', protect, getRecommendations);
 
 router.get('/me/addresses', protect, listAddresses);
 router.post('/me/addresses', protect, addressValidator, validate, addAddress);
-router.put('/me/addresses/:addressId', protect, updateAddress);
+router.put('/me/addresses/:addressId', protect, addressValidator, validate, updateAddress);
 router.delete('/me/addresses/:addressId', protect, deleteAddress);
 router.patch('/me/addresses/:addressId/default', protect, setDefaultAddress);
 
@@ -43,7 +45,7 @@ router.post('/me/wishlist/:productId', protect, addToWishlist);
 router.delete('/me/wishlist/:productId', protect, removeFromWishlist);
 
 router.get('/', protect, authorize('admin'), listUsersAdmin);
-router.patch('/:id/role', protect, authorize('admin'), updateUserRole);
-router.patch('/:id/status', protect, authorize('admin'), updateUserStatus);
+router.patch('/:id/role', protect, authorize('admin'), updateUserRoleValidator, validate, updateUserRole);
+router.patch('/:id/status', protect, authorize('admin'), updateUserStatusValidator, validate, updateUserStatus);
 
 export default router;

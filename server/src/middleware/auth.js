@@ -11,7 +11,9 @@ export const protect = asyncHandler(async (req, res, next) => {
   }
 
   const token = header.split(' ')[1];
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  // Pin the algorithm explicitly — without this, jsonwebtoken will accept whatever
+  // algorithm the token itself claims, which is how algorithm-confusion attacks work.
+  const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
   const user = await User.findById(decoded.id);
   if (!user || !user.isActive) {
