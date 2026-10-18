@@ -74,6 +74,9 @@ export default function GalleryPage() {
           necessarily for sale, just worth showing. Sign in to like what catches your eye, or order
           a piece directly.
         </p>
+        <Link to="/showroom" className="mt-5 inline-block text-xs uppercase tracking-[0.2em] text-accent hover:text-accent-dark">
+          Walk through the 3D showroom →
+        </Link>
       </div>
 
       <div className="mb-12">

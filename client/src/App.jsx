@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -18,6 +19,9 @@ import AccountDashboardPage from './pages/AccountDashboardPage';
 import CustomOrderInquiryPage from './pages/CustomOrderInquiryPage';
 import GalleryPage from './pages/GalleryPage';
 import NotFoundPage from './pages/NotFoundPage';
+
+// The showroom pulls in three.js + react-three-fiber (~0.7 MB), so it loads only when visited.
+const ShowroomPage = lazy(() => import('./pages/ShowroomPage'));
 
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminProductsListPage from './pages/admin/AdminProductsListPage';
@@ -45,6 +49,15 @@ export default function App() {
       <ScrollToTop />
       <PageTransitionOverlay />
       <Routes>
+        <Route
+          path="showroom"
+          element={
+            <Suspense fallback={<div className="fixed inset-0 bg-night" />}>
+              <ShowroomPage />
+            </Suspense>
+          }
+        />
+
         <Route element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="shop" element={<CatalogPage />} />
