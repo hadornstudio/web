@@ -18,6 +18,7 @@ import { rawProducts } from './data/products.data.js';
 import { couponsData } from './data/coupons.data.js';
 import { testimonialAvatars } from './data/images.js';
 import { galleryItemsData } from './data/gallery.data.js';
+import { applyConfigurators } from './configurators.js';
 
 const DEMO_CUSTOMERS = [
   { name: 'Maya Ellison', email: 'maya@demo.hadorn.com' },
@@ -62,6 +63,7 @@ async function seed() {
   }));
   const products = await Product.insertMany(productsToInsert);
   console.log(`Created ${products.length} products.`);
+  for (const line of await applyConfigurators()) console.log(' -', line);
 
   console.log('Creating coupons...');
   await Coupon.insertMany(couponsData);

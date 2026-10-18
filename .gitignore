@@ -16,3 +16,6 @@ assets-src/models/
 # Generated frame sequences (hosting decision pending: Cloudinary vs repo)
 client/public/hero/
 client/public/showroom/intro/
+
+# local preview database (scripts/dev-local.js)
+server/.local-db/

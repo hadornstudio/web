@@ -1,9 +1,19 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useProduct, useRelatedProducts } from '../hooks/useProducts';
 import { useProductReviews } from '../hooks/useReviews';
 import { useCartStore } from '../store/useCartStore';
 import ProductGallery from '../components/product/ProductGallery';
+import ProductViewer3D from '../components/product3d/ProductViewer3D';
+import { webglAvailable } from '../utils/webgl';
+import Configurator from '../components/product3d/Configurator';
+import {
+  configKey,
+  selectionFromParams,
+  selectionPriceDelta,
+  selectionSummary,
+  selectionToParams,
+} from '../utils/configurator';
 import VariantSelector from '../components/product/VariantSelector';
 import StockStatus from '../components/product/StockStatus';
 import PriceTag from '../components/common/PriceTag';
@@ -31,6 +41,26 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const config = product?.configurator?.enabled ? product.configurator : null;
+  const [selection, setSelection] = useState(null);
+  const [viewMode, setViewMode] = useState('3d');
+  const [viewerFailed, setViewerFailed] = useState(false);
+  const [canView3D] = useState(webglAvailable);
+  const viewerRef = useRef(null);
+  const handleViewerUnavailable = useCallback(() => setViewerFailed(true), []);
+
+  // Restore a shared configuration from the URL, else start from the defaults.
+  useEffect(() => {
+    setSelection(config ? selectionFromParams(config, searchParams) : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?._id]);
+
+  useEffect(() => {
+    if (config && selection) setSearchParams(selectionToParams(config, selection, searchParams), { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection]);
+
   useEffect(() => {
     if (product?.variants?.length) {
       const firstAvailable = product.variants.find((v) => v.stock > 0) || product.variants[0];
@@ -42,20 +72,38 @@ export default function ProductDetailPage() {
   if (!product) return <div className="container-page py-32 text-center">Product not found.</div>;
 
   const selectedVariant = product.variants?.find((v) => v._id === variantId);
-  const unitPrice = product.basePrice + (selectedVariant?.priceDelta || 0);
+  const configDelta = config && selection ? selectionPriceDelta(config, selection) : 0;
+  const unitPrice = product.basePrice + (selectedVariant?.priceDelta || 0) + configDelta;
+  const show3D = Boolean(config && selection && canView3D && !viewerFailed);
   const stock = selectedVariant ? selectedVariant.stock : product.stock;
   const canAddToCart = product.stockStatus === 'made_to_order' || stock > 0;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    let image = product.images[selectedVariant?.imageIndex ?? 0] || product.images[0];
+    let configFields = {};
+    if (config && selection) {
+      // Thumbnail of the configured 3D model for the bag; the order itself stores the choices.
+      const snapshot = show3D
+        ? await Promise.race([viewerRef.current?.snapshot(), new Promise((resolve) => setTimeout(() => resolve(null), 2500))])
+        : null;
+      if (snapshot) image = snapshot;
+      configFields = {
+        configKey: configKey(config, selection),
+        options: selection.options,
+        addons: selection.addons,
+        configSummary: selectionSummary(config, selection),
+      };
+    }
     addItem({
       productId: product._id,
       variantId: selectedVariant?._id,
       slug: product.slug,
       title: product.title,
-      image: product.images[selectedVariant?.imageIndex ?? 0] || product.images[0],
-      variantLabel: selectedVariant ? [selectedVariant.color, selectedVariant.material].filter(Boolean).join(' / ') : undefined,
+      image,
+      variantLabel: !config && selectedVariant ? [selectedVariant.color, selectedVariant.material].filter(Boolean).join(' / ') : undefined,
       unitPrice,
       quantity,
+      ...configFields,
     });
     setAdded(true);
     openDrawer();
@@ -64,7 +112,28 @@ export default function ProductDetailPage() {
   return (
     <div className="container-page py-16">
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
-        <ProductGallery images={product.images} title={product.title} />
+        {show3D ? (
+          <div className="sticky top-20 z-10 self-start bg-paper pb-2 md:top-24">
+            <div className="mb-3 flex gap-5 text-xs uppercase tracking-[0.2em]">
+              {[['3d', '3D view'], ['photos', 'Photos']].map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setViewMode(mode)}
+                  className={`border-b pb-1 transition-colors ${viewMode === mode ? 'border-accent text-accent' : 'border-transparent text-stone-600 hover:text-ink'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className={viewMode === '3d' ? '' : 'hidden'}>
+              <ProductViewer3D ref={viewerRef} product={product} selection={selection} onUnavailable={handleViewerUnavailable} />
+            </div>
+            {viewMode === 'photos' && <ProductGallery images={product.images} title={product.title} />}
+          </div>
+        ) : (
+          <ProductGallery images={product.images} title={product.title} />
+        )}
 
         <div>
           <p className="text-xs uppercase tracking-wide text-stone-600">{product.category?.name}</p>
@@ -83,7 +152,7 @@ export default function ProductDetailPage() {
 
           <p className="mt-6 text-stone-600">{product.shortDescription || product.description}</p>
 
-          {product.variants?.length > 0 && (
+          {!config && product.variants?.length > 0 && (
             <div className="mt-8">
               <VariantSelector
                 variants={product.variants}
@@ -93,6 +162,8 @@ export default function ProductDetailPage() {
               />
             </div>
           )}
+
+          {config && selection && <Configurator config={config} selection={selection} onChange={setSelection} />}
 
           <div className="mt-8 flex items-center gap-4">
             <div className="flex items-center border border-stone-300">

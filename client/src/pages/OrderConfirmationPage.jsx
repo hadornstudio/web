@@ -29,6 +29,9 @@ export default function OrderConfirmationPage() {
                 <div className="flex-1">
                   <p className="text-ink">{item.title}</p>
                   <p className="text-stone-600">{item.variantLabel} · Qty {item.quantity}</p>
+                  {item.configuration?.length > 0 && (
+                    <p className="text-xs text-stone-600">{item.configuration.map((c) => `${c.part}: ${c.option}`).join(' · ')}</p>
+                  )}
                 </div>
                 <span>{formatCurrency(item.lineTotal)}</span>
               </div>

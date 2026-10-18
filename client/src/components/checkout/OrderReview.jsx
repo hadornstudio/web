@@ -19,11 +19,12 @@ export default function OrderReview({ items, address, subtotal, totals, coupon, 
         <h3 className="mb-3 text-sm uppercase tracking-wide text-ink">Items</h3>
         <div className="flex flex-col gap-3">
           {items.map((item) => (
-            <div key={`${item.productId}-${item.variantId}`} className="flex items-center gap-3 text-sm">
+            <div key={`${item.productId}-${item.variantId}-${item.configKey || ''}`} className="flex items-center gap-3 text-sm">
               <img src={item.image} alt={item.title} className="h-14 w-14 shrink-0 object-cover" />
               <div className="flex-1">
                 <p className="text-ink">{item.title}</p>
                 <p className="text-stone-600">{item.variantLabel} · Qty {item.quantity}</p>
+                {item.configSummary?.length > 0 && <p className="text-xs text-stone-600">{item.configSummary.join(' · ')}</p>}
               </div>
               <span className="text-ink">{formatCurrency(item.unitPrice * item.quantity)}</span>
             </div>

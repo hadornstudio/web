@@ -14,7 +14,13 @@ export default function PaymentForm({ items, couponCode, address, notes, onOrder
     setError('');
     setStatus('initializing');
     try {
-      const cartItems = items.map((i) => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity }));
+      const cartItems = items.map((i) => ({
+        productId: i.productId,
+        variantId: i.variantId,
+        quantity: i.quantity,
+        ...(i.options && { options: i.options }),
+        ...(i.addons?.length && { addons: i.addons }),
+      }));
 
       const initRes = await paymentsApi.initialize({ items: cartItems, couponCode: couponCode || undefined, shippingAddress: address });
       const { accessCode, publicKey, total: computedTotal } = initRes.data;

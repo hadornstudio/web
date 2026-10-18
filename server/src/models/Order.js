@@ -9,6 +9,7 @@ const orderItemSchema = new Schema(
     title: { type: String, required: true },
     image: { type: String },
     variantLabel: { type: String },
+    configuration: { type: [new Schema({ part: String, option: String }, { _id: false })], default: undefined },
     unitPrice: { type: Number, required: true },
     quantity: { type: Number, required: true, min: 1 },
     lineTotal: { type: Number, required: true },

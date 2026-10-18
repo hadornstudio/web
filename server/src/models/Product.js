@@ -16,6 +16,75 @@ const variantSchema = new Schema(
   { timestamps: true }
 );
 
+
+const SLUG = /^[a-z0-9_-]+$/i;
+const HEX = /^#[0-9a-f]{6}$/i;
+
+const configOptionSchema = new Schema(
+  {
+    id: { type: String, required: true, trim: true, maxlength: 40, match: SLUG },
+    label: { type: String, required: true, trim: true, maxlength: 60 },
+    color: { type: String, match: HEX },
+    metallic: { type: Number, min: 0, max: 1 },
+    roughness: { type: Number, min: 0, max: 1 },
+    scale: { type: Number, min: 0.5, max: 2 },
+    priceDelta: { type: Number, default: 0, min: 0 },
+    isDefault: { type: Boolean, default: undefined },
+  },
+  { _id: false }
+);
+
+// `material` parts recolour a named material in the 3D model; `scale` parts resize the whole model.
+const configPartSchema = new Schema(
+  {
+    id: { type: String, required: true, trim: true, maxlength: 40, match: SLUG },
+    label: { type: String, required: true, trim: true, maxlength: 60 },
+    type: { type: String, enum: ['material', 'scale'], default: 'material' },
+    material: { type: String, trim: true, maxlength: 40 },
+    options: {
+      type: [configOptionSchema],
+      validate: { validator: (v) => v.length > 0, message: 'Each configurator part needs at least one option' },
+    },
+  },
+  { _id: false }
+);
+
+// Add-ons show/hide a named material (e.g. the "Charm" pieces) and add to the price.
+const configAddonSchema = new Schema(
+  {
+    id: { type: String, required: true, trim: true, maxlength: 40, match: SLUG },
+    label: { type: String, required: true, trim: true, maxlength: 60 },
+    material: { type: String, required: true, trim: true, maxlength: 40 },
+    priceDelta: { type: Number, default: 0, min: 0 },
+  },
+  { _id: false }
+);
+
+const configuratorSchema = new Schema(
+  {
+    enabled: { type: Boolean, default: true },
+    model: { type: String, required: true, match: /^\/models\/[\w.-]+\.glb$/ },
+    parts: { type: [configPartSchema], default: [] },
+    addons: { type: [configAddonSchema], default: [] },
+  },
+  { _id: false }
+);
+
+configuratorSchema.path('parts').validate({
+  validator(parts) {
+    const ids = parts.map((p) => p.id);
+    if (new Set(ids).size !== ids.length) return false;
+    return parts.every((p) => {
+      const optionIds = p.options.map((o) => o.id);
+      const unique = new Set(optionIds).size === optionIds.length;
+      const needsMaterial = p.type !== 'scale' ? Boolean(p.material) : true;
+      const optionsOk = p.options.every((o) => (p.type === 'scale' ? o.scale != null : Boolean(o.color)));
+      return unique && needsMaterial && optionsOk;
+    });
+  },
+  message: 'Configurator parts need unique ids, a material (colour parts) and a colour/scale on every option',
+});
+
 const productSchema = new Schema(
   {
     title: { type: String, required: true, trim: true, maxlength: 150 },
@@ -40,6 +109,7 @@ const productSchema = new Schema(
     ratingsAverage: { type: Number, default: 0, min: 0, max: 5 },
     ratingsCount: { type: Number, default: 0, min: 0 },
     weight: { type: Number },
+    configurator: { type: configuratorSchema, default: undefined },
   },
   { timestamps: true }
 );

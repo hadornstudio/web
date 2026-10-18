@@ -5,6 +5,7 @@ import Order from '../models/Order.js';
 import { ApiError } from './ApiError.js';
 import { calculateOrderTotals } from './calculateOrderTotals.js';
 import { resolveShippingCost } from './resolveShippingCost.js';
+import { resolveConfiguration } from './resolveConfiguration.js';
 
 // Re-derives line items, stock availability, and totals directly from the database —
 // never trusts prices or availability sent by the client. Shared by payment-intent
@@ -39,13 +40,17 @@ export async function resolveCartItems({ items, couponCode, userId, shippingAddr
       throw new ApiError(409, `Not enough stock for "${product.title}"${variantLabel ? ` (${variantLabel})` : ''}`);
     }
 
+    const config = resolveConfiguration(product, line);
+    unitPrice += config.priceDelta;
+
     resolvedItems.push({
       product: product._id,
       productDoc: product,
       variantId: variant?._id,
       title: product.title,
       image: product.images[variant?.imageIndex ?? 0] || product.images[0],
-      variantLabel,
+      variantLabel: config.summary.length ? undefined : variantLabel,
+      configuration: config.summary.length ? config.summary : undefined,
       unitPrice,
       quantity: line.quantity,
       lineTotal: Math.round(unitPrice * line.quantity * 100) / 100,

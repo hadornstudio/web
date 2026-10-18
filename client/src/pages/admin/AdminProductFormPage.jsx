@@ -26,6 +26,7 @@ const EMPTY_FORM = {
   variants: [],
   isFeatured: false,
   isActive: true,
+  configurator: '',
 };
 
 function toFormState(product) {
@@ -51,6 +52,7 @@ function toFormState(product) {
     })),
     isFeatured: Boolean(product.isFeatured),
     isActive: product.isActive ?? true,
+    configurator: product.configurator ? JSON.stringify(product.configurator, null, 2) : '',
   };
 }
 
@@ -99,6 +101,16 @@ export default function AdminProductFormPage() {
       return;
     }
 
+    let configurator = null;
+    if (form.configurator.trim()) {
+      try {
+        configurator = JSON.parse(form.configurator);
+      } catch {
+        setError('The 3D configurator JSON is not valid JSON.');
+        return;
+      }
+    }
+
     const payload = {
       title: form.title,
       description: form.description,
@@ -118,6 +130,7 @@ export default function AdminProductFormPage() {
       })),
       isFeatured: form.isFeatured,
       isActive: form.isActive,
+      configurator,
     };
 
     const mutation = isEdit ? updateProduct : createProduct;
@@ -210,6 +223,23 @@ export default function AdminProductFormPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section>
+          <h2 className="mb-1 font-display text-lg">3D Configurator (optional)</h2>
+          <p className="mb-3 text-sm text-stone-600">
+            Turns the product page into a 3D viewer where customers pick colours, sizes and add-ons. Leave blank for a normal product.
+            Paste the configurator JSON (model path must be <code>/models/…glb</code>; part <code>material</code> names must match the model).
+            Prices here are decided on the server at checkout.
+          </p>
+          <textarea
+            value={form.configurator}
+            onChange={(e) => set('configurator', e.target.value)}
+            rows={form.configurator ? 14 : 4}
+            spellCheck={false}
+            placeholder='{ "model": "/models/beaded-necklace.glb", "parts": [ … ], "addons": [ … ] }'
+            className="w-full border border-stone-300 bg-paper p-3 font-mono text-xs"
+          />
         </section>
 
         <section>

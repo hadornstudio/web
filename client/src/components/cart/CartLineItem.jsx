@@ -31,6 +31,13 @@ export default function CartLineItem({ item, compact = false }) {
               {item.title}
             </Link>
             {item.variantLabel && <p className="mt-0.5 text-xs text-stone-600">{item.variantLabel}</p>}
+            {item.configSummary?.length > 0 && (
+              <ul className="mt-1 text-xs text-stone-600">
+                {item.configSummary.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            )}
           </div>
           <span className="text-sm text-ink">{formatCurrency(item.unitPrice * item.quantity)}</span>
         </div>
@@ -40,7 +47,7 @@ export default function CartLineItem({ item, compact = false }) {
             <button
               type="button"
               className="px-2.5 py-1 text-stone-600 hover:text-accent"
-              onClick={() => updateQuantity(item.productId, item.variantId, item.quantity - 1)}
+              onClick={() => updateQuantity(item.productId, item.variantId, item.quantity - 1, item.configKey)}
               aria-label="Decrease quantity"
             >
               −
@@ -49,7 +56,7 @@ export default function CartLineItem({ item, compact = false }) {
             <button
               type="button"
               className="px-2.5 py-1 text-stone-600 hover:text-accent"
-              onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)}
+              onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1, item.configKey)}
               aria-label="Increase quantity"
             >
               +
@@ -58,7 +65,7 @@ export default function CartLineItem({ item, compact = false }) {
           <button
             type="button"
             className="text-xs uppercase tracking-wide text-stone-600 hover:text-error"
-            onClick={() => removeItem(item.productId, item.variantId)}
+            onClick={() => removeItem(item.productId, item.variantId, item.configKey)}
           >
             Remove
           </button>

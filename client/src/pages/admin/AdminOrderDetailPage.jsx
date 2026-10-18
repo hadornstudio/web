@@ -26,7 +26,16 @@ export default function AdminOrderDetailPage() {
 
   const itemColumns = [
     { key: 'image', header: '', className: 'w-14', render: (i) => <img src={i.image} alt="" className="h-10 w-10 object-cover" /> },
-    { key: 'title', header: 'Item', render: (i) => <>{i.title}{i.variantLabel && <span className="text-stone-600"> — {i.variantLabel}</span>}</> },
+    { key: 'title', header: 'Item', render: (i) => (
+      <>
+        {i.title}{i.variantLabel && <span className="text-stone-600"> — {i.variantLabel}</span>}
+        {i.configuration?.length > 0 && (
+          <ul className="mt-1 text-xs text-stone-600">
+            {i.configuration.map((c) => <li key={c.part + c.option}>{c.part}: <span className="text-ink">{c.option}</span></li>)}
+          </ul>
+        )}
+      </>
+    ) },
     { key: 'unitPrice', header: 'Unit Price', render: (i) => <PriceTag amount={i.unitPrice} /> },
     { key: 'quantity', header: 'Qty' },
     { key: 'lineTotal', header: 'Line Total', render: (i) => <PriceTag amount={i.lineTotal} /> },
