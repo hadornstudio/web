@@ -18,13 +18,25 @@ export const HERO_CONFIG = {
   // Tagline, line and CTA fade out before the wordmark does.
   textFadeOut: { start: 0.17, end: 0.24 },
 
-  // PLACEHOLDER COPY — replace with the owner's wording.
-  cards: [
-    { at: 0.42, side: 'left', label: 'Beadwork', title: 'Strung by hand', text: 'Every piece is made bead by bead, one at a time.' },
-    { at: 0.62, side: 'right', label: 'The collection', title: 'Necklaces, bracelets & earrings', text: 'Pieces for every day and for the moments in between.' },
-    { at: 0.8, side: 'left', label: 'Made to order', title: 'Something of your own', text: 'Choose your colours and materials, or tell us what you have in mind.' },
+  // The old glass cards were placeholder copy; the name tags below replaced them. Kept as an empty list
+  // so cards ({ at, side, label, title, text }) can be added back without touching the component.
+  cards: [],
+  cardWindow: 0.12,
+
+  // Name tags: a dot sits on the item, a line draws out to a glass label. Positions are fractions of the
+  // FULL FILM FRAME (x, y from the top-left), measured on the final boutique shot, so they follow the
+  // picture at any screen size. PLACEHOLDER NAMES — rename freely.
+  //   at / until: scroll progress when the tag draws in / fades out
+  //   anchor:     the item     label: where the line ends     align: which side of that point the label sits
+  tags: [
+    { id: 'necklaces', name: 'Beaded necklaces', at: 0.74, anchor: [0.516, 0.48], label: [0.66, 0.6], align: 'left' },
+    { id: 'robe', name: 'African-print robe', at: 0.79, anchor: [0.309, 0.47], label: [0.1, 0.17], align: 'left' },
+    { id: 'runner', name: 'Printed table runner', at: 0.84, anchor: [0.547, 0.78], label: [0.65, 0.9], align: 'left' },
+    { id: 'rack', name: 'Ready-to-wear', at: 0.88, anchor: [0.871, 0.42], label: [0.8, 0.17], align: 'left' },
+    { id: 'jewellery', name: 'Cuffs & bangles', at: 0.92, anchor: [0.9375, 0.82], label: [0.76, 0.77], align: 'left' },
   ],
-  cardWindow: 0.12, // how much scroll each card stays on screen
+  // The phone frames are the centre 9:16 slice of the 16:9 film: x runs from `x0` for a width of `w` (fractions of the film).
+  mobileCrop: { x0: 0.342, w: 0.316 },
 
   finalCta: { appearAt: 0.92, text: 'Step inside the collection', label: 'Shop the collection', to: '/shop' },
 };

@@ -4,7 +4,7 @@ export default function MobileNav({ open, onClose, links }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden">
+    <div className="fixed inset-0 z-50 xl:hidden">
       <button
         type="button"
         className="absolute inset-0 bg-ink/40"

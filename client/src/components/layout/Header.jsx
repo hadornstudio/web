@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { to: '/shop/bracelets', label: 'Bracelets' },
   { to: '/shop/earrings', label: 'Earrings' },
   { to: '/gallery', label: 'Gallery' },
+  { to: '/showroom', label: 'Showroom' },
   { to: '/custom-order', label: 'Custom' },
 ];
 
@@ -25,7 +26,7 @@ export default function Header() {
       <div className="container-page flex h-20 items-center justify-between">
         <button
           type="button"
-          className="text-ink md:hidden"
+          className="text-ink xl:hidden"
           onClick={() => setMobileOpen(true)}
           aria-label="Open menu"
         >
@@ -39,7 +40,7 @@ export default function Header() {
           <BrandSvg name="wordmark" className="w-20 lg:w-28" />
         </Link>
 
-        <nav className="hidden items-center gap-5 md:flex md:gap-4 lg:gap-8">
+        <nav className="hidden items-center gap-4 xl:flex xl:gap-8">
           {NAV_LINKS.map((link) => (
             <NavLink
               key={link.to}

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { v2 as cloudinary } from 'cloudinary';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const REV = 'v1';
+const REV = 'v2';
 const CONCURRENCY = 8;
 
 const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env;
@@ -63,13 +63,14 @@ for (const name of names) {
       process.exit(1);
     }
     const manifest = JSON.parse(readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
-    const files = readdirSync(dir).filter((f) => f.endsWith('.webp')).sort();
+    const ext = manifest.ext || 'webp';
+    const files = readdirSync(dir).filter((f) => f.endsWith(`.${ext}`)).sort();
     const folder = `${set.folder}-${REV}/${variant}`;
     console.log(`${name}/${variant}: uploading ${files.length} frames -> ${folder}`);
 
     await uploadPool(files, async (file) => {
       await cloudinary.uploader.upload(path.join(dir, file), {
-        public_id: file.replace(/\.webp$/, ''),
+        public_id: file.replace(/\.\w+$/, ''),
         folder,
         resource_type: 'image',
         overwrite: true,
@@ -86,7 +87,7 @@ for (const name of names) {
       height: manifest.height,
       fps: manifest.fps,
       pad: 4,
-      ext: 'webp',
+      ext,
     };
   }
 }

@@ -30,6 +30,7 @@ export default function Footer() {
           <ul className="space-y-2 text-sm text-stone-600">
             <li><Link to="/#craft" className="hover:text-accent">Our Craft</Link></li>
             <li><Link to="/gallery" className="hover:text-accent">Gallery</Link></li>
+            <li><Link to="/showroom" className="hover:text-accent">3D Showroom</Link></li>
             <li><Link to="/custom-order" className="hover:text-accent">Custom Orders</Link></li>
             <li><Link to="/account" className="hover:text-accent">Account</Link></li>
           </ul>

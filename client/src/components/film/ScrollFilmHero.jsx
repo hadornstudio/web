@@ -7,6 +7,7 @@ import frameSets from '../../config/frameSets.json';
 import { HERO_CONFIG as C } from './heroConfig';
 import { mapProgress, smoothstep } from './filmMath';
 import { frameUrl, useFrameSequence } from './useFrameSequence';
+import TagLayer from './TagLayer';
 
 const HERO_HEIGHT = `calc(100svh - ${C.headerOffset}px)`;
 const FILM_BUTTON =
@@ -50,6 +51,7 @@ function FilmHero({ isMobile }) {
   const cardRefs = useRef([]);
   const finalRef = useRef(null);
   const veilRef = useRef(null);
+  const tagsRef = useRef(null);
   const repaintRef = useRef(() => {});
 
   const framesRef = useFrameSequence(set, (i) => repaintRef.current(i));
@@ -157,6 +159,7 @@ function FilmHero({ isMobile }) {
           progress = self.progress;
           target = mapProgress(progress, C.slowStart) * (n - 1);
           updateOverlays(progress);
+          tagsRef.current?.update(progress);
         },
       });
 
@@ -191,6 +194,14 @@ function FilmHero({ isMobile }) {
       <section ref={sectionRef} className="relative min-h-[520px] overflow-hidden bg-night" style={{ height: HERO_HEIGHT }}>
         <img src={frameUrl(set, 1)} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden="true" />
+        <TagLayer
+          ref={tagsRef}
+          tags={C.tags}
+          frame={set}
+          crop={isMobile ? C.cropRight.mobile : C.cropRight.desktop}
+          isMobile={isMobile}
+          mobileCrop={C.mobileCrop}
+        />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-night/70 via-transparent to-night/25" />
         <A11yHeading />
         <div ref={veilRef} className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(20,16,12,0.55),transparent_70%)]" />
