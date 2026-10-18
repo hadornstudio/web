@@ -8,3 +8,11 @@ build/
 npm-debug.log*
 .vscode/
 .idea/
+
+# 3D pipeline raw inputs (large media, not shipped)
+assets-src/**/*.mp4
+assets-src/**/*.mov
+assets-src/models/
+# Generated frame sequences (hosting decision pending: Cloudinary vs repo)
+client/public/hero/
+client/public/showroom/intro/
