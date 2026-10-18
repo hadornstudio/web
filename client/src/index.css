@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bevan&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bevan&family=Jost:wght@300;400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -18,6 +18,13 @@
   --font-sans: 'Bevan', ui-sans-serif, system-ui, sans-serif;
 
   --container-8xl: 90rem;
+
+  /* 3D experiences only (home film, intro, showroom). The shop keeps the clay/paper palette + Bevan. */
+  --color-night: #14100c;
+  --color-ivory: #f4ede1;
+  --color-gold: #c9a45c;
+  --color-coral: #c4553b;
+  --font-studio: 'Jost', ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -38,6 +45,14 @@
     letter-spacing: -0.01em;
   }
 }
+
+/* Lenis (home page only) takes over scrolling, so the global smooth-scroll must step aside. */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+/* Inlined brand SVGs: the wordmark's A overshoots its viewBox by a few units. */
+.brand-svg > svg { display: block; width: 100%; height: auto; overflow: visible; }
 
 @layer utilities {
   .container-page {

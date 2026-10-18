@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import MobileNav from './MobileNav';
+import BrandSvg from '../brand/BrandSvg';
 
 const NAV_LINKS = [
   { to: '/shop', label: 'Shop' },
@@ -33,12 +34,12 @@ export default function Header() {
           </svg>
         </button>
 
-        <Link to="/" className="flex items-center gap-2.5 text-ink">
-          <img src="/logo-mark.png" alt="" className="h-8 w-8" />
-          <span className="font-display text-xl tracking-wide">HADORN</span>
+        <Link to="/" aria-label="Hadorn Studio — home" className="flex items-center gap-3 text-ink">
+          <BrandSvg name="mark" className="w-8 lg:w-10" />
+          <BrandSvg name="wordmark" className="w-20 lg:w-28" />
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-5 md:flex md:gap-4 lg:gap-8">
           {NAV_LINKS.map((link) => (
             <NavLink
               key={link.to}

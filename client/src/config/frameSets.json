@@ -1,0 +1,42 @@
+{
+  "hero": {
+    "desktop": {
+      "base": "https://res.cloudinary.com/qx0i5d58/image/upload/hadorn-3d/hero-v1/desktop/",
+      "frames": 192,
+      "width": 1280,
+      "height": 720,
+      "fps": 24,
+      "pad": 4,
+      "ext": "webp"
+    },
+    "mobile": {
+      "base": "https://res.cloudinary.com/qx0i5d58/image/upload/hadorn-3d/hero-v1/mobile/",
+      "frames": 192,
+      "width": 404,
+      "height": 720,
+      "fps": 24,
+      "pad": 4,
+      "ext": "webp"
+    }
+  },
+  "showroomIntro": {
+    "desktop": {
+      "base": "https://res.cloudinary.com/qx0i5d58/image/upload/hadorn-3d/showroom-intro-v1/desktop/",
+      "frames": 192,
+      "width": 1280,
+      "height": 720,
+      "fps": 24,
+      "pad": 4,
+      "ext": "webp"
+    },
+    "mobile": {
+      "base": "https://res.cloudinary.com/qx0i5d58/image/upload/hadorn-3d/showroom-intro-v1/mobile/",
+      "frames": 192,
+      "width": 404,
+      "height": 720,
+      "fps": 24,
+      "pad": 4,
+      "ext": "webp"
+    }
+  }
+}

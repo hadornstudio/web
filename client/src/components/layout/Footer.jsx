@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
+import BrandSvg from '../brand/BrandSvg';
 
 export default function Footer() {
   return (
     <footer className="mt-32 border-t border-stone-300 bg-cream">
       <div className="container-page grid grid-cols-1 gap-12 py-16 md:grid-cols-4">
         <div>
-          <div className="flex items-center gap-2">
-            <img src="/logo-mark.png" alt="" className="h-7 w-7" />
-            <p className="font-display text-xl text-ink">HADORN</p>
+          <div className="flex items-center gap-2.5 text-ink" role="img" aria-label="Hadorn Studio">
+            <BrandSvg name="mark" className="w-8" />
+            <BrandSvg name="wordmark" className="w-24" />
           </div>
           <p className="mt-4 max-w-xs text-sm text-stone-600">
             Handcrafted beading and jewelry, strung one bead at a time.
