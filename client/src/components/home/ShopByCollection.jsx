@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useCategories } from '../../hooks/useCategories';
 import Spinner from '../common/Spinner';
+import InfiniteCarousel from '../common/InfiniteCarousel';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { useGSAP } from '@gsap/react';
 import { gsap, DURATION, EASE, prefersReducedMotion } from '../../lib/motion/gsapConfig';
@@ -40,19 +41,25 @@ export default function ShopByCollection() {
         <h2 className="mt-3 font-display text-3xl">Shop by Collection</h2>
       </div>
 
-      <div ref={gridRef} className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        {categories.map((category) => (
-          <Link key={category._id} to={`/shop/${category.slug}`} className="group block">
-            <div className="collection-tile-image aspect-[3/4] overflow-hidden bg-cream">
-              <img
-                src={category.image}
-                alt={category.name}
-                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-              />
-            </div>
-            <p className="mt-3 text-center text-sm uppercase tracking-wide text-ink">{category.name}</p>
-          </Link>
-        ))}
+      <div ref={gridRef} className="-mx-6 md:-mx-12">
+        <InfiniteCarousel
+          label="Shop by collection"
+          items={categories}
+          gapClassName="gap-4"
+          itemClassName="w-[44vw] sm:w-[30vw] md:w-[calc((100%-3rem)/4)]"
+          renderItem={(category) => (
+            <Link to={`/shop/${category.slug}`} className="group block">
+              <div className="collection-tile-image aspect-[3/4] overflow-hidden bg-cream">
+                <img
+                  src={category.image}
+                  alt={category.name}
+                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                />
+              </div>
+              <p className="mt-3 text-center text-sm uppercase tracking-wide text-ink">{category.name}</p>
+            </Link>
+          )}
+        />
       </div>
     </section>
   );

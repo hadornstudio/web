@@ -22,7 +22,7 @@ import Button from '../components/common/Button';
 import WishlistHeartButton from '../components/common/WishlistHeartButton';
 import LocalShippingEstimate from '../components/product/LocalShippingEstimate';
 import Spinner from '../components/common/Spinner';
-import ProductGrid from '../components/product/ProductGrid';
+import ProductCarousel from '../components/product/ProductCarousel';
 import ReviewList from '../components/reviews/ReviewList';
 import ReviewForm from '../components/reviews/ReviewForm';
 
@@ -110,7 +110,8 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="container-page py-16">
+    <>
+    <div className="container-page pt-16">
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
         {show3D ? (
           <div className="sticky top-20 z-10 self-start bg-paper pb-2 md:top-24">
@@ -194,15 +195,20 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {relatedData?.data?.products?.length > 0 && (
-        <div className="mt-24">
-          <h2 className="font-display text-2xl">You May Also Like</h2>
-          <div className="mt-8">
-            <ProductGrid products={relatedData.data.products} />
-          </div>
-        </div>
-      )}
+    </div>
 
+    {relatedData?.data?.products?.length > 0 && (
+      <section className="mt-24">
+        <div className="container-page">
+          <h2 className="font-display text-2xl">You May Also Like</h2>
+        </div>
+        <div className="mt-8">
+          <ProductCarousel products={relatedData.data.products} label="You may also like" />
+        </div>
+      </section>
+    )}
+
+    <div className="container-page pb-16">
       <div className="mt-24 max-w-2xl">
         <h2 className="font-display text-2xl">Reviews</h2>
         <div className="mt-6">
@@ -214,5 +220,6 @@ export default function ProductDetailPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

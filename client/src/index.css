@@ -51,6 +51,16 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-stopped { overflow: hidden; }
 
+/* Full-bleed carousel row whose first card lines up with the page container's left edge. */
+.carousel-scroller {
+  --pad: 1.5rem;
+  padding-inline: max(var(--pad), calc((100% - 90rem) / 2 + var(--pad)));
+  scroll-padding-inline: max(var(--pad), calc((100% - 90rem) / 2 + var(--pad)));
+  scrollbar-width: none;
+}
+.carousel-scroller::-webkit-scrollbar { display: none; }
+@media (min-width: 768px) { .carousel-scroller { --pad: 3rem; } }
+
 /* Inlined brand SVGs: the wordmark's A overshoots its viewBox by a few units. */
 .brand-svg > svg { display: block; width: 100%; height: auto; overflow: visible; }
 

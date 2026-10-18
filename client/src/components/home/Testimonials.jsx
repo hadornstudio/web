@@ -1,4 +1,5 @@
 import { useScrollReveal } from '../../hooks/useScrollReveal';
+import InfiniteCarousel from '../common/InfiniteCarousel';
 
 const TESTIMONIALS = [
   {
@@ -33,17 +34,23 @@ export default function Testimonials() {
         <h2 className="mt-3 font-display text-3xl">From Hadorn Customers</h2>
       </div>
 
-      <div ref={revealRef} className="container-page flex snap-x gap-6 overflow-x-auto pb-4">
-        {TESTIMONIALS.map((t) => (
-          <div key={t.name} className="w-72 shrink-0 snap-start border border-stone-300 bg-paper p-6">
-            <p className="text-accent">★★★★★</p>
-            <p className="mt-4 text-sm text-stone-600">&ldquo;{t.quote}&rdquo;</p>
-            <div className="mt-6 flex items-center gap-3">
-              <img src={t.avatar} alt={t.name} className="h-9 w-9 rounded-full object-cover" />
-              <span className="text-sm text-ink">{t.name}</span>
+      <div ref={revealRef}>
+        <InfiniteCarousel
+          label="Customer testimonials"
+          items={TESTIMONIALS}
+          gapClassName="gap-6"
+          itemClassName="w-[78vw] sm:w-72 md:w-[calc((100%-3rem)/3)]"
+          renderItem={(t) => (
+            <div className="h-full border border-stone-300 bg-paper p-6">
+              <p className="text-accent">★★★★★</p>
+              <p className="mt-4 text-sm text-stone-600">&ldquo;{t.quote}&rdquo;</p>
+              <div className="mt-6 flex items-center gap-3">
+                <img src={t.avatar} alt={t.name} className="h-9 w-9 rounded-full object-cover" />
+                <span className="text-sm text-ink">{t.name}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          )}
+        />
       </div>
     </section>
   );

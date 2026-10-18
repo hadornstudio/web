@@ -1,6 +1,6 @@
-export default function Select({ label, className = '', children, id, ...props }) {
+export default function Select({ label, className = '', wrapperClassName = '', children, id, ...props }) {
   return (
-    <label className="block" htmlFor={id}>
+    <label className={`block ${wrapperClassName}`} htmlFor={id}>
       {label && <span className="mb-1.5 block text-sm text-stone-600">{label}</span>}
       <select
         id={id}

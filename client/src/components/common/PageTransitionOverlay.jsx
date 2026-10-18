@@ -1,6 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { gsap, DURATION, EASE, prefersReducedMotion } from '../../lib/motion/gsapConfig';
+import BrandSvg from '../brand/BrandSvg';
+
+// Changing a category filter moves between /shop and /shop/:category — same page, so no flourish.
+const inShop = (path) => path === '/shop' || path.startsWith('/shop/');
 
 // Purely decorative — route content has already swapped in underneath by the time this
 // runs (no data-loading gate), so the timeline just gives the swap a branded flourish
@@ -16,8 +20,9 @@ export default function PageTransitionOverlay() {
 
   useEffect(() => {
     if (prevPathnameRef.current === pathname) return;
+    const previous = prevPathnameRef.current;
     prevPathnameRef.current = pathname;
-    if (prefersReducedMotion()) return;
+    if (prefersReducedMotion() || (inShop(previous) && inShop(pathname))) return;
 
     const overlay = overlayRef.current;
     const mark = markRef.current;
@@ -42,9 +47,9 @@ export default function PageTransitionOverlay() {
       className="pointer-events-none fixed inset-0 z-[999] flex items-center justify-center bg-paper opacity-0"
       style={{ visibility: 'hidden' }}
     >
-      <div ref={markRef} className="flex items-center gap-2.5 opacity-0">
-        <img src="/logo-mark.png" alt="" className="h-10 w-10" />
-        <span className="font-display text-2xl tracking-wide text-ink">HADORN</span>
+      <div ref={markRef} className="flex items-center gap-3 text-ink opacity-0">
+        <BrandSvg name="mark" className="w-11" />
+        <BrandSvg name="wordmark" className="w-32" />
       </div>
     </div>
   );

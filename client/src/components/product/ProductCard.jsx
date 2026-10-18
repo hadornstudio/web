@@ -24,16 +24,16 @@ export default function ProductCard({ product }) {
           />
         )}
         {product.stockStatus !== 'in_stock' && (
-          <div className="absolute left-3 top-3">
+          <div className="absolute left-2 top-2 md:left-3 md:top-3">
             <StockStatus status={product.stockStatus} />
           </div>
         )}
-        <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <div className="absolute bottom-2 right-2 transition-opacity duration-200 md:bottom-auto md:right-3 md:top-3 md:opacity-0 md:group-hover:opacity-100">
           <WishlistHeartButton productId={product._id} className="bg-paper/90" />
         </div>
       </div>
 
-      <div className="mt-4 flex items-start justify-between gap-2">
+      <div className="mt-3 flex flex-col gap-1 sm:mt-4 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
         <div>
           <h3 className="text-sm text-ink">{product.title}</h3>
           {product.ratingsCount > 0 && (
