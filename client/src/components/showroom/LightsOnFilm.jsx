@@ -32,21 +32,21 @@ export default function LightsOnFilm({ onDone }) {
       canvas.width = Math.round(window.innerWidth * dpr);
       canvas.height = Math.round(window.innerHeight * dpr);
       drawn = -1;
+      const coverScale = Math.max(canvas.width / set.width, canvas.height / set.height);
+      framesRef.current?.setDecodeWidth(set.width * coverScale);
     };
 
     const draw = (idx) => {
-      const images = framesRef.current;
-      let img = images[idx];
-      for (let d = 1; d < n && !img; d++) img = images[idx - d] || images[idx + d];
-      if (!img) return;
-      const scale = Math.max(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
-      const w = img.naturalWidth * scale;
-      const h = img.naturalHeight * scale;
-      ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+      const bitmap = framesRef.current?.nearest(idx);
+      if (!bitmap) return;
+      const scale = Math.max(canvas.width / bitmap.width, canvas.height / bitmap.height);
+      const w = bitmap.width * scale;
+      const h = bitmap.height * scale;
+      ctx.drawImage(bitmap, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
       drawn = idx;
     };
     repaintRef.current = (i) => {
-      if (Math.round(shown * (n - 1)) === i) drawn = -1;
+      if (Math.abs(Math.round(shown * (n - 1)) - i) <= 2) drawn = -1;
     };
 
     const nudge = (delta) => {
@@ -79,12 +79,19 @@ export default function LightsOnFilm({ onDone }) {
 
     const autoStart = performance.now() + cfg.autoplayAfterMs;
 
+    let focused = -1;
+    let direction = 1;
     const tick = (_time, deltaTime) => {
       const dt = deltaTime / 1000;
       if (!userDriven && performance.now() > autoStart) progress = Math.min(1, progress + dt / cfg.durationSec);
-      shown += (progress - shown) * (1 - Math.exp(-dt * 8));
+      if (progress !== shown) direction = progress > shown ? 1 : -1;
+      shown += (progress - shown) * (1 - Math.exp(-dt * 20));
       gsap.set(hintRef.current, { autoAlpha: 1 - Math.min(1, shown * 12) });
       const idx = Math.round(shown * (n - 1));
+      if (idx !== focused) {
+        focused = idx;
+        framesRef.current?.focus(idx, direction);
+      }
       if (idx !== drawn) draw(idx);
       if (!finished && shown > 0.985 && progress >= 1) {
         finished = true;

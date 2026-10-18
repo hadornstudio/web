@@ -8,7 +8,7 @@ let tick = null;
 
 export function startLenis() {
   if (lenis || prefersReducedMotion()) return lenis;
-  lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+  lenis = new Lenis({ lerp: 0.14, smoothWheel: true });
   lenis.on('scroll', ScrollTrigger.update);
   tick = (time) => lenis.raf(time * 1000);
   gsap.ticker.add(tick);

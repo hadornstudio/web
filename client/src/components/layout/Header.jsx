@@ -22,7 +22,7 @@ export default function Header() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-stone-300 bg-paper/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-stone-300 bg-paper/95">
       <div className="container-page flex h-20 items-center justify-between">
         <button
           type="button"

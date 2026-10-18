@@ -56,19 +56,19 @@ const TagLayer = forwardRef(function TagLayer({ tags, frame, crop, isMobile, mob
     const ctx = gsap.context(() => {
       placed.forEach((t) => {
         const g = root.querySelector(`[data-tag="${t.id}"]`);
-        const line = g.querySelector('line');
+        const lines = g.querySelectorAll('line');
         const dot = g.querySelector('.tag-dot');
         const ring = g.querySelector('.tag-ring');
         const label = root.querySelector(`[data-label="${t.id}"]`);
         const length = Math.hypot(t.ax - t.lx, t.ay - t.ly);
-        gsap.set(line, { strokeDasharray: length, strokeDashoffset: length });
+        gsap.set(lines, { strokeDasharray: length, strokeDashoffset: length });
         gsap.set([dot, ring], { scale: 0, transformOrigin: '50% 50%' });
         gsap.set(label, { autoAlpha: 0, x: t.align === 'left' ? 10 : -10 });
         const pulse = gsap.to(ring, { scale: 2.4, opacity: 0, duration: 1.8, repeat: -1, ease: 'power1.out', paused: true });
         const tl = gsap
           .timeline({ paused: true })
           .to(dot, { scale: 1, duration: 0.3, ease: 'power3.out' }, 0)
-          .to(line, { strokeDashoffset: 0, duration: 0.6, ease: 'power2.inOut' }, 0.15)
+          .to(lines, { strokeDashoffset: 0, duration: 0.6, ease: 'power2.inOut' }, 0.15)
           .to(label, { autoAlpha: 1, x: 0, duration: 0.45, ease: 'power3.out' }, 0.5)
           .add(() => pulse.play(), 0.3)
           .eventCallback('onReverseComplete', () => pulse.pause(0));
@@ -104,9 +104,10 @@ const TagLayer = forwardRef(function TagLayer({ tags, frame, crop, isMobile, mob
       <svg className="absolute inset-0 h-full w-full overflow-visible" width={size.w} height={size.h}>
         {placed.map((t) => (
           <g key={t.id} data-tag={t.id}>
-            <line x1={t.ax} y1={t.ay} x2={t.lx} y2={t.ly} stroke="#f4ede1" strokeWidth="1.25" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 3px rgba(20,16,12,0.7))' }} />
+            <line className="tag-shadow" x1={t.ax} y1={t.ay} x2={t.lx} y2={t.ly} stroke="#14100c" strokeOpacity="0.45" strokeWidth="3.5" strokeLinecap="round" />
+            <line className="tag-line" x1={t.ax} y1={t.ay} x2={t.lx} y2={t.ly} stroke="#f4ede1" strokeWidth="1.25" strokeLinecap="round" />
             <circle className="tag-ring" cx={t.ax} cy={t.ay} r="9" fill="none" stroke="#f4ede1" strokeWidth="1.5" />
-            <circle className="tag-dot" cx={t.ax} cy={t.ay} r="6" fill="#c9a45c" stroke="#f4ede1" strokeWidth="2" style={{ filter: 'drop-shadow(0 0 4px rgba(20,16,12,0.8))' }} />
+            <circle className="tag-dot" cx={t.ax} cy={t.ay} r="6" fill="#c9a45c" stroke="#f4ede1" strokeWidth="2" />
           </g>
         ))}
       </svg>
@@ -118,7 +119,7 @@ const TagLayer = forwardRef(function TagLayer({ tags, frame, crop, isMobile, mob
         >
           <div
             data-label={t.id}
-            className="flex items-center gap-2.5 border border-ivory/30 bg-night/45 px-3.5 py-2 font-studio text-ivory backdrop-blur-md"
+            className="flex items-center gap-2.5 border border-ivory/30 bg-night/70 px-3.5 py-2 font-studio text-ivory"
           >
             <span className="text-[10px] font-normal tracking-[0.25em] text-gold">{String(t.index + 1).padStart(2, '0')}</span>
             <span className="whitespace-nowrap text-sm font-light tracking-wide">{t.name}</span>

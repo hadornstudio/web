@@ -11,7 +11,7 @@ import TagLayer from './TagLayer';
 
 const HERO_HEIGHT = `calc(100svh - ${C.headerOffset}px)`;
 const FILM_BUTTON =
-  'inline-flex items-center justify-center border border-ivory/80 bg-night/30 px-7 py-3 font-studio text-xs uppercase tracking-[0.25em] text-ivory backdrop-blur-sm transition-colors duration-300 hover:bg-ivory hover:text-night';
+  'inline-flex items-center justify-center border border-ivory/80 bg-night/45 px-7 py-3 font-studio text-xs uppercase tracking-[0.25em] text-ivory transition-colors duration-300 hover:bg-ivory hover:text-night';
 const TEXT_SHADOW = '[text-shadow:0_1px_14px_rgba(20,16,12,0.85)]';
 
 function A11yHeading() {
@@ -76,27 +76,26 @@ function FilmHero({ isMobile }) {
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       drawn = -1;
+      // Decode frames only as wide as this screen will actually show them (less memory, faster decode).
+      const coverScale = Math.max(canvas.width / (set.width * (1 - crop)), canvas.height / set.height);
+      framesRef.current?.setDecodeWidth(set.width * coverScale);
     };
 
     const draw = (idx) => {
-      const images = framesRef.current;
-      let img = images[idx];
-      if (!img) {
-        for (let d = 1; d < n && !img; d++) img = images[idx - d] || images[idx + d];
-      }
-      if (!img) return;
-      const sw = img.naturalWidth * (1 - crop);
-      const sh = img.naturalHeight;
+      const bitmap = framesRef.current?.nearest(idx);
+      if (!bitmap) return;
+      const sw = bitmap.width * (1 - crop);
+      const sh = bitmap.height;
       const scale = Math.max(canvas.width / sw, canvas.height / sh);
       const dw = sw * scale;
       const dh = sh * scale;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, sw, sh, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
+      ctx.drawImage(bitmap, 0, 0, sw, sh, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
       drawn = idx;
     };
 
+    // A frame near the playhead just finished decoding: repaint so it replaces the stand-in.
     repaintRef.current = (loadedIndex) => {
-      if (Math.round(cur) === loadedIndex) drawn = -1;
+      if (Math.abs(Math.round(cur) - loadedIndex) <= 2) drawn = -1;
     };
 
     const letters = [...wordRef.current.querySelectorAll('path[id]')];
@@ -116,25 +115,31 @@ function FilmHero({ isMobile }) {
         .fromTo([lineRef.current, ctaRef.current], { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power3.out', stagger: 0.12 }, 0.5);
 
       let wordShown = false;
+      let wordSettled = false; // past the wordmark's fade-out: nothing in this block changes any more
 
       const updateOverlays = (p) => {
         const w = C.wordmark;
-        gsap.set(cueRef.current, { autoAlpha: 1 - smoothstep(0, 0.03, p) });
+        const settled = p > w.fadeEnd + 0.01;
+        if (!(settled && wordSettled)) {
+          gsap.set(cueRef.current, { autoAlpha: 1 - smoothstep(0, 0.03, p) });
 
-        if (p >= w.appearAt && !wordShown) {
-          wordShown = true;
-          wordIn.play();
-        } else if (p < w.appearAt && wordShown) {
-          wordShown = false;
-          wordIn.reverse();
+          if (p >= w.appearAt && !wordShown) {
+            wordShown = true;
+            wordIn.play();
+          } else if (p < w.appearAt && wordShown) {
+            wordShown = false;
+            wordIn.reverse();
+          }
+
+          const swell = smoothstep(w.appearAt, w.fadeEnd, p);
+          gsap.set(wordWrapRef.current, { scale: 1 + (w.scaleTo - 1) * swell, autoAlpha: 1 - smoothstep(w.fadeStart, w.fadeEnd, p) });
+          hadornLetters.forEach((el, i) => gsap.set(el, { x: (i - (hadornLetters.length - 1) / 2) * w.spread * swell }));
+          studioLetters.forEach((el, i) => gsap.set(el, { x: (i - (studioLetters.length - 1) / 2) * w.spread * 0.4 * swell }));
+
+          gsap.set([textWrapRef.current, lineWrapRef.current], { autoAlpha: 1 - smoothstep(C.textFadeOut.start, C.textFadeOut.end, p) });
+          gsap.set(veilRef.current, { autoAlpha: smoothstep(w.appearAt, w.appearAt + 0.04, p) * (1 - smoothstep(w.fadeStart, w.fadeEnd, p)) });
+          wordSettled = settled;
         }
-
-        const swell = smoothstep(w.appearAt, w.fadeEnd, p);
-        gsap.set(wordWrapRef.current, { scale: 1 + (w.scaleTo - 1) * swell, autoAlpha: 1 - smoothstep(w.fadeStart, w.fadeEnd, p) });
-        hadornLetters.forEach((el, i) => gsap.set(el, { x: (i - (hadornLetters.length - 1) / 2) * w.spread * swell }));
-        studioLetters.forEach((el, i) => gsap.set(el, { x: (i - (studioLetters.length - 1) / 2) * w.spread * 0.4 * swell }));
-
-        gsap.set([textWrapRef.current, lineWrapRef.current], { autoAlpha: 1 - smoothstep(C.textFadeOut.start, C.textFadeOut.end, p) });
 
         C.cards.forEach((card, i) => {
           const el = cardRefs.current[i];
@@ -142,8 +147,6 @@ function FilmHero({ isMobile }) {
           const fadeOut = 1 - smoothstep(card.at + C.cardWindow - 0.03, card.at + C.cardWindow, p);
           gsap.set(el, { autoAlpha: Math.min(fadeIn, fadeOut), y: (1 - fadeIn) * 24 });
         });
-
-        gsap.set(veilRef.current, { autoAlpha: smoothstep(w.appearAt, w.appearAt + 0.04, p) * (1 - smoothstep(w.fadeStart, w.fadeEnd, p)) });
 
         gsap.set(finalRef.current, { autoAlpha: smoothstep(C.finalCta.appearAt, C.finalCta.appearAt + 0.05, p) });
       };
@@ -163,11 +166,19 @@ function FilmHero({ isMobile }) {
         },
       });
 
+      let focused = -1;
+      let direction = 1;
       const tick = (_time, deltaTime) => {
-        const ease = 1 - Math.exp(-(deltaTime / 1000) * 10);
+        // Lenis already smooths the scroll itself, so this only needs a light touch (a heavy one reads as lag).
+        const ease = 1 - Math.exp(-(deltaTime / 1000) * 28);
+        if (target !== cur) direction = target > cur ? 1 : -1;
         cur += (target - cur) * ease;
         if (Math.abs(target - cur) < 0.01) cur = target;
         const idx = Math.round(cur);
+        if (idx !== focused) {
+          focused = idx;
+          framesRef.current?.focus(idx, direction);
+        }
         if (idx !== drawn) draw(idx);
       };
       gsap.ticker.add(tick);
@@ -212,7 +223,7 @@ function FilmHero({ isMobile }) {
               {C.brand.tagline}
             </p>
           </div>
-          <div ref={wordWrapRef} className="w-[clamp(240px,62vw,1000px)] drop-shadow-[0_2px_24px_rgba(20,16,12,0.55)]">
+          <div ref={wordWrapRef} className="w-[clamp(240px,62vw,1000px)]">
             <BrandSvg ref={wordRef} name="studio" aria-hidden="true" />
           </div>
           <div ref={lineWrapRef} className="pointer-events-auto flex flex-col items-center">
