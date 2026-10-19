@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useGalleryItems } from '../hooks/useGallery';
+import { usePageMeta } from '../hooks/usePageMeta';
+import { responsiveImage } from '../utils/images';
 import { useCategories } from '../hooks/useCategories';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import GalleryLikeButton from '../components/common/GalleryLikeButton';
@@ -45,6 +47,7 @@ function OrderButton({ item }) {
 }
 
 export default function GalleryPage() {
+  usePageMeta({ title: 'Gallery', description: 'A look inside the studio — pieces in progress, technique studies and finished work.' });
   const [searchParams, setSearchParams] = useSearchParams();
   const category = searchParams.get('category') || '';
   const sort = searchParams.get('sort') || 'newest';
@@ -129,7 +132,9 @@ export default function GalleryPage() {
                 className="block aspect-square w-full overflow-hidden bg-cream"
               >
                 <img
-                  src={item.images[0]}
+                  {...responsiveImage(item.images[0], '(min-width: 768px) 30vw, 46vw')}
+                  loading="lazy"
+                  decoding="async"
                   alt={item.title}
                   className="h-full w-full object-cover transition-transform duration-500 ease-out hover:scale-105"
                 />

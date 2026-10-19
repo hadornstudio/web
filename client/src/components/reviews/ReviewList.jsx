@@ -14,7 +14,7 @@ export default function ReviewList({ reviews }) {
             <StarRating rating={review.rating} />
             {review.isVerifiedPurchase && <Badge tone="success">Verified Purchase</Badge>}
           </div>
-          {review.title && <h4 className="mt-2 text-sm text-ink">{review.title}</h4>}
+          {review.title && <h3 className="mt-2 text-sm text-ink">{review.title}</h3>}
           <p className="mt-2 text-sm text-stone-600">{review.comment}</p>
           <p className="mt-3 text-xs text-stone-600">
             {review.user?.name || 'Hadorn Customer'} · {new Date(review.createdAt).toLocaleDateString()}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useProduct, useRelatedProducts } from '../hooks/useProducts';
 import { useProductReviews } from '../hooks/useReviews';
+import { usePageMeta } from '../hooks/usePageMeta';
 import { useCartStore } from '../store/useCartStore';
 import ProductGallery from '../components/product/ProductGallery';
 import ProductViewer3D from '../components/product3d/ProductViewer3D';
@@ -33,6 +34,7 @@ export default function ProductDetailPage() {
 
   const { data: relatedData } = useRelatedProducts(product?._id);
   const { data: reviewsData } = useProductReviews(product?._id);
+  usePageMeta({ title: product?.title, description: product?.shortDescription || product?.description });
 
   const addItem = useCartStore((s) => s.addItem);
   const openDrawer = useCartStore((s) => s.openDrawer);
@@ -68,7 +70,7 @@ export default function ProductDetailPage() {
     }
   }, [product?._id]);
 
-  if (isLoading) return <Spinner className="py-32" />;
+  if (isLoading) return <Spinner className="min-h-[100vh] items-start pt-32" />;
   if (!product) return <div className="container-page py-32 text-center">Product not found.</div>;
 
   const selectedVariant = product.variants?.find((v) => v._id === variantId);

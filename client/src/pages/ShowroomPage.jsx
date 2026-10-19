@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { gsap } from '../lib/motion/gsapConfig';
 import { useGalleryItems } from '../hooks/useGallery';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { usePageMeta } from '../hooks/usePageMeta';
 import { webglAvailable } from '../utils/webgl';
 import Spinner from '../components/common/Spinner';
 import TitleCard from '../components/showroom/TitleCard';
@@ -72,6 +73,7 @@ function Walkthrough({ works, reduced }) {
 }
 
 export default function ShowroomPage() {
+  usePageMeta({ title: 'The Gallery', description: "Walk through Hadorn Studio's 3D gallery of handcrafted beadwork — every piece with its story." });
   const reduced = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [searchParams] = useSearchParams();
   const forceList = searchParams.get('view') === 'list';

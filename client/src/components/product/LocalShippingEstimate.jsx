@@ -17,7 +17,7 @@ export default function LocalShippingEstimate() {
   return (
     <div className="mt-8 border border-stone-300 p-4 text-sm">
       <p className="mb-2 text-ink">Estimate shipping (Nigeria)</p>
-      <Select value={state} onChange={(e) => setState(e.target.value)} className="max-w-[220px]">
+      <Select aria-label="Your state" value={state} onChange={(e) => setState(e.target.value)} className="max-w-[220px]">
         <option value="">Select your state…</option>
         {rates.map((r) => (
           <option key={r.state} value={r.state}>{r.state}</option>

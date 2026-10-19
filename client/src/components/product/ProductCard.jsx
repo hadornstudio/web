@@ -3,6 +3,9 @@ import PriceTag from '../common/PriceTag';
 import StockStatus from './StockStatus';
 import StarRating from '../common/StarRating';
 import WishlistHeartButton from '../common/WishlistHeartButton';
+import { responsiveImage } from '../../utils/images';
+
+const CARD_SIZES = '(min-width: 1024px) 24vw, (min-width: 640px) 33vw, 46vw';
 
 export default function ProductCard({ product }) {
   const { min, max } = product.effectivePriceRange || { min: product.basePrice, max: product.basePrice };
@@ -12,14 +15,18 @@ export default function ProductCard({ product }) {
     <Link to={`/product/${product.slug}`} className="product-card group block">
       <div className="relative aspect-square overflow-hidden bg-cream">
         <img
-          src={product.images?.[0]}
+          {...responsiveImage(product.images?.[0], CARD_SIZES)}
           alt={product.title}
+          loading="lazy"
+          decoding="async"
           className="h-full w-full object-cover transition-opacity duration-500 group-hover:opacity-0"
         />
         {secondImage && (
           <img
-            src={secondImage}
+            {...responsiveImage(secondImage, CARD_SIZES)}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
           />
         )}

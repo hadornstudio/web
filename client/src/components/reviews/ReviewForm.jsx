@@ -15,7 +15,7 @@ export default function ReviewForm({ productId }) {
   if (!isAuthenticated) {
     return (
       <p className="text-sm text-stone-600">
-        <Link to="/login" className="text-accent hover:text-accent-dark">Sign in</Link> to leave a review.
+        <Link to="/login" className="text-accent underline underline-offset-2 hover:text-accent-dark">Sign in</Link> to leave a review.
       </p>
     );
   }

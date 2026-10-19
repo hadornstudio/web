@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { gsap } from '../../lib/motion/gsapConfig';
+import { isLowEndDevice } from '../../utils/webgl';
 import { SHOWROOM, bayLayout, hallEndZ, standDistance, baseFov } from './showroomConfig';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -23,7 +24,7 @@ function stopFor(index, aspect, work) {
 
 // Procedural textures keep the placeholder room free of image downloads.
 function useRoomTextures() {
-  return useMemo(() => {
+  const textures = useMemo(() => {
     const floor = document.createElement('canvas');
     floor.width = floor.height = 512;
     const g = floor.getContext('2d');
@@ -59,6 +60,14 @@ function useRoomTextures() {
     glowTex.colorSpace = THREE.SRGBColorSpace;
     return { floorTex, glowTex };
   }, []);
+
+  // The canvases were created by hand, so the renderer won't free them when the hall unmounts.
+  useEffect(() => () => {
+    textures.floorTex.dispose();
+    textures.glowTex.dispose();
+  }, [textures]);
+
+  return textures;
 }
 
 function Room({ count }) {
@@ -152,6 +161,11 @@ function Room({ count }) {
 
 function ArtPanel({ url, height, maxWidth, position }) {
   const texture = useTexture(url);
+  // drei caches loaded textures forever; free the GPU copy (and the cache entry) when this bay is no longer near.
+  useEffect(() => () => {
+    texture.dispose();
+    useTexture.clear(url);
+  }, [texture, url]);
   const img = texture.image;
   const aspect = img.width / img.height;
   let h = height;
@@ -350,12 +364,14 @@ function SceneContents({ works, index, instant, inputRef, onSelect }) {
   );
 }
 
+const LOW_END = isLowEndDevice();
+
 export default function GalleryScene({ onReady, ...props }) {
   return (
     <Canvas
-      dpr={[1, 1.5]}
+      dpr={LOW_END ? 1 : [1, 1.5]}
       camera={{ fov: 50, near: 0.1, far: 80 }}
-      gl={{ antialias: true, powerPreference: 'high-performance' }}
+      gl={{ antialias: !LOW_END, powerPreference: LOW_END ? 'default' : 'high-performance' }}
       onCreated={() => onReady?.()}
       aria-hidden="true"
     >

@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { useParallax } from '../../hooks/useParallax';
+import { responsiveImage } from '../../utils/images';
 
 const CRAFT_IMAGE = 'https://images.unsplash.com/photo-1659032882718-3e54e7da86ab?q=80&w=1200&auto=format&fit=crop';
 
@@ -22,7 +23,7 @@ export default function CraftStory() {
           grid cell is only as tall as its own content has nowhere to visibly stick. */}
       <div className="md:sticky md:top-28 md:self-start">
         <div className="aspect-[4/5] overflow-hidden bg-cream">
-          <img ref={imageRef} src={CRAFT_IMAGE} alt="Hadorn's workspace" className="h-full w-full object-cover" />
+          <img ref={imageRef} {...responsiveImage(CRAFT_IMAGE, '(min-width: 768px) 45vw, 100vw', [600, 1000, 1400])} loading="lazy" decoding="async" alt="Hadorn's workspace" className="h-full w-full object-cover" />
         </div>
       </div>
 

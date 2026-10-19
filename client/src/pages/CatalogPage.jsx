@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useInfiniteProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
+import { usePageMeta } from '../hooks/usePageMeta';
 import ProductGrid from '../components/product/ProductGrid';
 import FilterPanel from '../components/product/FilterPanel';
 import FilterSheet from '../components/product/FilterSheet';
@@ -33,6 +34,7 @@ export default function CatalogPage() {
   const { data: categoriesData } = useCategories();
   const categories = categoriesData?.data?.categories || [];
   const category = categories.find((c) => c.slug === categorySlug);
+  usePageMeta({ title: category?.name || 'Shop', description: category?.description });
 
   const query = useInfiniteProducts(filters);
   const products = useMemo(() => query.data?.pages.flatMap((p) => p.data.products) ?? [], [query.data]);

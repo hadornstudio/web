@@ -4,11 +4,18 @@ export function frameUrl(set, index1) {
   return `${set.base}frame_${String(index1).padStart(set.pad, '0')}.${set.ext}`;
 }
 
-const EAGER = 20; // compressed frames fetched immediately, in parallel
+const EAGER = 12; // compressed frames fetched first, in parallel (once the page is idle)
 const FETCH_POOL = 6;
 const DECODE_POOL = 4;
 const DECODE_AHEAD = 18; // decoded frames kept in the scroll direction...
 const DECODE_BEHIND = 5; // ...and behind it, for a quick reverse
+const LAZY_AHEAD = 48; // on slow / data-saver connections, only fetch this far past the playhead
+
+// Data-saver or a slow link: don't pull the whole film for someone who may never scroll it.
+function constrainedConnection() {
+  const c = typeof navigator !== 'undefined' ? navigator.connection : null;
+  return Boolean(c && (c.saveData || /^(slow-2g|2g|3g)$/.test(c.effectiveType || '')));
+}
 
 // A full-HD film decoded is ~1.6 GB, which no browser keeps, so a plain <img> sequence re-decodes frames on the
 // main thread mid-scroll (the lag). Instead: keep every frame as a small compressed Blob, and decode only a window
@@ -70,7 +77,9 @@ function createStore(set, onFrame) {
 
   const fetchFrame = async (i) => {
     try {
-      const res = await fetch(frameUrl(set, i + 1));
+      // Frame 1 is also the poster <img> (cached, high priority); everything else must never compete with
+      // the page's own content, so it goes out at low priority.
+      const res = await fetch(frameUrl(set, i + 1), { priority: i === 0 ? 'high' : 'low' });
       if (!res.ok) return;
       blobs[i] = await res.blob();
       if (!closed) pump();
@@ -79,15 +88,31 @@ function createStore(set, onFrame) {
     }
   };
 
-  (async () => {
+  // Start after the first paint settles: the poster alone is enough to show, and the film's frames are
+  // only needed once the visitor begins to scroll.
+  const whenIdle = (fn) => {
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(fn, { timeout: 1500 });
+    else setTimeout(fn, 600);
+  };
+
+  const run = async () => {
+    if (closed) return;
     await fetchFrame(0);
     await Promise.all(Array.from({ length: Math.min(EAGER, n) - 1 }, (_, k) => fetchFrame(k + 1)));
     let next = EAGER;
+    const lazy = constrainedConnection();
     const worker = async () => {
-      while (!closed && next < n) await fetchFrame(next++);
+      while (!closed && next < n) {
+        if (lazy && next > focusIdx + LAZY_AHEAD) {
+          await new Promise((r) => setTimeout(r, 300));
+          continue;
+        }
+        await fetchFrame(next++);
+      }
     };
     await Promise.all(Array.from({ length: FETCH_POOL }, worker));
-  })();
+  };
+  whenIdle(run);
 
   return {
     // Move the playhead; decodes the window around it.

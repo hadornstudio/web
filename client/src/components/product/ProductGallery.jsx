@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { responsiveImage, sizedImage } from '../../utils/images';
 
 export default function ProductGallery({ images = [], title }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -16,7 +17,7 @@ export default function ProductGallery({ images = [], title }) {
                 i === activeIndex ? 'border-accent' : 'border-transparent'
               }`}
             >
-              <img src={img} alt={`${title} thumbnail ${i + 1}`} className="h-full w-full object-cover" />
+              <img src={sizedImage(img, 160)} alt={`${title} thumbnail ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
             </button>
           ))}
         </div>
@@ -25,8 +26,9 @@ export default function ProductGallery({ images = [], title }) {
       <div className="flex-1 overflow-hidden bg-cream">
         <div className="group relative aspect-square overflow-hidden">
           <img
-            src={images[activeIndex]}
+            {...responsiveImage(images[activeIndex], '(min-width: 768px) 45vw, 100vw', [600, 1000, 1500])}
             alt={title}
+            fetchPriority="high"
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-125"
           />
         </div>

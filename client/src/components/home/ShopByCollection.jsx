@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { responsiveImage } from '../../utils/images';
 import { useCategories } from '../../hooks/useCategories';
 import Spinner from '../common/Spinner';
 import InfiniteCarousel from '../common/InfiniteCarousel';
@@ -51,7 +52,9 @@ export default function ShopByCollection() {
             <Link to={`/shop/${category.slug}`} className="group block">
               <div className="collection-tile-image aspect-[3/4] overflow-hidden bg-cream">
                 <img
-                  src={category.image}
+                  {...responsiveImage(category.image, '(min-width: 768px) 24vw, 44vw', [300, 600, 900])}
+                  loading="lazy"
+                  decoding="async"
                   alt={category.name}
                   className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                 />

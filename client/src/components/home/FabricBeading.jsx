@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
+import { responsiveImage } from '../../utils/images';
 import { gsap, DURATION, EASE, prefersReducedMotion } from '../../lib/motion/gsapConfig';
 
 const FABRIC_BEADING_IMAGE = 'https://images.unsplash.com/photo-1715374033196-0ff662284a7e?q=80&w=1200&auto=format&fit=crop';
@@ -53,7 +54,9 @@ export default function FabricBeading() {
 
       <div ref={imageWrapRef} className="order-1 aspect-[4/5] overflow-hidden bg-cream md:order-2">
         <img
-          src={FABRIC_BEADING_IMAGE}
+          {...responsiveImage(FABRIC_BEADING_IMAGE, '(min-width: 768px) 45vw, 100vw', [600, 1000, 1400])}
+          loading="lazy"
+          decoding="async"
           alt="Beads woven onto fabric on a hand loom"
           className="h-full w-full object-cover"
         />

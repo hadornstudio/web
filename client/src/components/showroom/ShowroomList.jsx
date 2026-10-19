@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { SHOWROOM } from './showroomConfig';
+import { responsiveImage } from '../../utils/images';
 
 // Plain HTML list of the same works. It's the fallback (no WebGL / reduced motion / ?view=list) and,
 // visually hidden, the text content search engines and screen readers get behind the 3D hall.
@@ -24,9 +25,9 @@ export default function ShowroomList({ works, hidden = false, notice, onEnter3D 
         </button>
       )}
       <div className={hidden ? '' : 'mt-12 grid grid-cols-1 gap-10 md:grid-cols-2'}>
-        {works.map((work) => (
+        {works.map((work, wi) => (
           <article key={work.id}>
-            {!hidden && <img src={work.images[0]} alt={work.title} loading="lazy" className="aspect-[4/3] w-full object-cover" />}
+            {!hidden && <img {...responsiveImage(work.images[0], '(min-width: 768px) 45vw, 100vw')} alt={work.title} loading={wi === 0 ? 'eager' : 'lazy'} fetchPriority={wi === 0 ? 'high' : undefined} decoding="async" className="aspect-[4/3] w-full object-cover" />}
             <h2 className={hidden ? '' : 'mt-4 font-display text-xl'}>{work.title}</h2>
             <p className={hidden ? '' : 'text-xs uppercase tracking-wide text-stone-600'}>{[work.category, work.year].filter(Boolean).join(' · ')}</p>
             <p className={hidden ? '' : 'mt-2 text-sm text-stone-600'}>{work.story}</p>

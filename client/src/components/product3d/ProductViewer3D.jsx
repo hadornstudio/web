@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { prefersReducedMotion } from '../../lib/motion/gsapConfig';
 import { defaultOption } from '../../utils/configurator';
+import { isLowEndDevice, isTouchDevice } from '../../utils/webgl';
 
 // Pushes the customer's selection onto the loaded glTF: material parts recolour a named material,
 // scale parts resize the model, add-ons fade a named material in or out.
@@ -149,7 +150,7 @@ const ProductViewer3D = forwardRef(function ProductViewer3D({ product, selection
           auto-rotate={!prefersReducedMotion() || undefined}
           auto-rotate-delay="1500"
           rotation-per-second="18deg"
-          shadow-intensity="0.9"
+          shadow-intensity={isLowEndDevice() ? '0' : '0.9'}
           shadow-softness="1"
           exposure="1.05"
           environment-image="neutral"
@@ -157,7 +158,7 @@ const ProductViewer3D = forwardRef(function ProductViewer3D({ product, selection
           camera-orbit="20deg 78deg auto"
           min-camera-orbit="auto auto 60%"
           max-camera-orbit="auto auto 220%"
-          ar
+          ar={isTouchDevice() || undefined}
           ar-modes="webxr scene-viewer quick-look"
           style={{ width: '100%', height: '100%', background: 'transparent', opacity: loaded ? 1 : 0, transition: 'opacity 400ms' }}
         >

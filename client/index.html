@@ -4,7 +4,30 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hadorn — Handcrafted Beading & Jewelry</title>
+    <title>Hadorn Studio — Handcrafted Beading & Jewelry</title>
+    <meta name="description" content="Hadorn Studio makes handcrafted beadwork, attire and accessories — necklaces, bracelets, earrings and anklets, made by hand. Customise your own piece in 3D." />
+    <meta name="theme-color" content="#14100c" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Hadorn Studio" />
+    <meta property="og:title" content="Hadorn Studio — Handcrafted Beading & Jewelry" />
+    <meta property="og:description" content="Handcrafted beadwork, attire and accessories. Customise your own piece in 3D or walk through the gallery." />
+    <meta property="og:image" content="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+    <!-- Fonts load without blocking first paint (text swaps in); the noscript copy covers no-JS visitors. -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bevan&family=Jost:wght@300;400;500&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bevan&family=Jost:wght@300;400;500&display=swap" /></noscript>
+    <!-- The home film's first frame is the LCP image, but React only renders it after the JS arrives; start it now. -->
+    <script>
+      if (location.pathname === '/') {
+        var l = document.createElement('link');
+        l.rel = 'preload'; l.as = 'image'; l.fetchPriority = 'high';
+        l.href = 'https://res.cloudinary.com/qx0i5d58/image/upload/hadorn-3d/hero-v2/' +
+          (matchMedia('(max-width: 767px)').matches ? 'mobile' : 'desktop') + '/frame_0001.avif';
+        document.head.appendChild(l);
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

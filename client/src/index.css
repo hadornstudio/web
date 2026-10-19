@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Bevan&family=Jost:wght@300;400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -11,7 +10,7 @@
   --color-accent: #8A5A38;
   --color-accent-dark: #6E4629;
   --color-accent-tint: #F1E4D8;
-  --color-success: #5F7A5A;
+  --color-success: #4A6346;
   --color-error: #A6483A;
 
   --font-display: 'Bevan', ui-serif, Georgia, serif;

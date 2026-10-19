@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { Suspense, useRef } from 'react';
 import { NavLink, Link, Outlet, useLocation } from 'react-router-dom';
 import { useGSAP } from '@gsap/react';
 import { useAuth } from '../../hooks/useAuth';
@@ -85,7 +85,9 @@ export default function AdminLayout() {
         </header>
 
         <main className="flex-1 overflow-y-auto px-8 py-6">
-          <Outlet />
+          <Suspense fallback={<p className="text-sm text-stone-600">Loading…</p>}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
 
