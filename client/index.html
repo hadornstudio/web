@@ -7,7 +7,7 @@
     <title>Hadorn Studio — Handcrafted Beading & Jewelry</title>
     <meta name="description" content="Hadorn Studio makes handcrafted beadwork, attire and accessories — necklaces, bracelets, earrings and anklets, made by hand. Customise your own piece in 3D." />
     <meta name="theme-color" content="#14100c" />
-    <style>html{background:#FAF7F2}#splash{position:fixed;inset:0;z-index:2000;background:#FAF7F2}</style>
+    <style>html{background:#14100c}#splash{position:fixed;inset:0;z-index:2000;color:#c9a45c}#splash .loader-half{position:absolute;top:0;bottom:0;width:50%;background:#14100c}#splash .loader-half-l{left:0}#splash .loader-half-r{right:0}</style>
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Hadorn Studio" />
     <meta property="og:title" content="Hadorn Studio — Handcrafted Beading & Jewelry" />
@@ -33,14 +33,21 @@
   <body>
     <div id="root"></div>
     <!-- First-load screen: same loader the app uses everywhere (src/components/common/LoadingScreen.jsx). Removed by src/lib/splash.js. -->
-    <div id="splash" class="loader-screen loader-splash" role="status" aria-label="Loading Hadorn Studio">
-      <div class="loader-stack">
-        <span class="loader-mark brand-svg" aria-hidden="true"><!--splash-mark--></span>
-        <span class="loader-word brand-svg" aria-hidden="true"><!--splash-word--></span>
-        <span class="loader-bar" aria-hidden="true"><i></i></span>
+    <div id="splash" class="loader-splash" role="status" aria-label="Loading Hadorn Studio">
+      <div class="loader-half loader-half-l"></div>
+      <div class="loader-half loader-half-r"></div>
+      <div class="loader-screen" style="position:absolute;inset:0;background:transparent">
+        <div class="loader-stack">
+          <span class="loader-mark brand-svg" aria-hidden="true"><!--splash-mark--></span>
+          <span class="loader-word brand-svg" aria-hidden="true"><!--splash-word--></span>
+        </div>
       </div>
     </div>
     <noscript><style>#splash{display:none}</style></noscript>
+    <script>
+      // The splash is the intro for this visit (same look as the home logo intro) — don't play both.
+      try { sessionStorage.setItem('hadorn-intro-seen', '1'); } catch (e) {}
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

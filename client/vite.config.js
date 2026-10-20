@@ -12,7 +12,7 @@ const brandSplash = () => ({
       readFileSync(new URL(`./src/assets/brand/${file}`, import.meta.url), 'utf8')
         .replace(/<title>[\s\S]*?<\/title>/, '')
         .replace(/\s(role|aria-label)="[^"]*"/g, '');
-    return html.replace('<!--splash-mark-->', svg('hadorn-mark.svg')).replace('<!--splash-word-->', svg('hadorn-wordmark.svg'));
+    return html.replace('<!--splash-mark-->', svg('hadorn-mark.svg')).replace('<!--splash-word-->', svg('hadorn-wordmark-studio.svg'));
   },
 })
 

@@ -6,7 +6,7 @@ import BrandSvg from '../brand/BrandSvg';
 // Changing a category filter moves between /shop and /shop/:category — same page, so no flourish.
 const inShop = (path) => path === '/shop' || path.startsWith('/shop/');
 
-// Purely decorative — route content has already swapped in underneath by the time this
+// The dark brown + gold look shared with the intro, splash and loading screen. Purely decorative — route content has already swapped in underneath by the time this
 // runs (no data-loading gate), so the timeline just gives the swap a branded flourish
 // instead of masking a real async wait.
 export default function PageTransitionOverlay() {
@@ -44,12 +44,12 @@ export default function PageTransitionOverlay() {
     <div
       ref={overlayRef}
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[999] flex items-center justify-center bg-paper opacity-0"
+      className="pointer-events-none fixed inset-0 z-[999] flex items-center justify-center bg-night opacity-0"
       style={{ visibility: 'hidden' }}
     >
-      <div ref={markRef} className="flex items-center gap-3 text-ink opacity-0">
-        <BrandSvg name="mark" className="w-11" />
-        <BrandSvg name="wordmark" className="w-32" />
+      <div ref={markRef} className="flex flex-col items-center gap-6 text-gold opacity-0">
+        <BrandSvg name="mark" className="w-[clamp(72px,10vw,104px)]" />
+        <BrandSvg name="studio" className="w-[clamp(180px,28vw,320px)]" />
       </div>
     </div>
   );

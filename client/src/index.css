@@ -102,40 +102,78 @@ html.lenis, html.lenis body { height: auto; }
   }
 }
 
-/* ---- Loader: one look for the first-load splash, every page-level wait and the small inline spinner ---- */
+/* ---- Loader: the site's one loading look — the dark brown screen with the gold mark assembling ----
+   Used for the first-load splash (index.html), every page-level wait and, in compact form, inline spinners.
+   Mirrors the home-page logo intro: the mark's pieces fly in, a light sweep crosses them, the wordmark rises. */
 .loader-screen {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-paper);
-  color: var(--color-ink);
+  overflow: hidden;
+  background: var(--color-night);
+  color: var(--color-gold);
 }
 .loader-fixed { position: fixed; inset: 0; z-index: 60; }
-.loader-splash { transition: opacity 600ms ease, visibility 0s linear 600ms; }
-.loader-splash.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.loader-stack { display: flex; flex-direction: column; align-items: center; gap: 1.1rem; }
-.loader-mark { display: block; width: 4.25rem; }
-.loader-word { display: block; width: 8.5rem; opacity: 0.9; }
-.loader-bar { position: relative; display: block; width: 7rem; height: 2px; overflow: hidden; background: var(--color-stone-300); }
-.loader-bar > i { position: absolute; inset: 0 auto 0 0; width: 40%; background: var(--color-accent); animation: loader-bar 1.3s ease-in-out infinite; }
-.loader-compact .loader-mark { width: 2.5rem; }
+.loader-stack { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 1.75rem; transition: opacity 250ms ease; }
+.loader-mark { display: block; width: clamp(88px, 12vw, 132px); }
+.loader-word { display: block; width: clamp(210px, 32vw, 380px); }
 
-/* The four pieces of the mark drift apart and come together, like beads being strung. */
-.loader-mark path { transform-box: fill-box; transform-origin: center; animation: loader-piece 1.7s ease-in-out infinite; }
-.loader-mark #mark-left { --dx: -150px; --dy: 40px; --rot: -14deg; }
-.loader-mark #mark-top-right { --dx: 140px; --dy: -120px; --rot: 16deg; animation-delay: 0.12s; }
-.loader-mark #mark-bottom { --dx: -40px; --dy: 150px; --rot: 10deg; animation-delay: 0.24s; }
-.loader-mark #mark-main { --dx: 0px; --dy: 70px; --rot: -4deg; animation-delay: 0.36s; }
+/* First-load splash: two halves that slide apart (like the intro's wipe) once the page is ready. */
+.loader-splash { position: fixed; inset: 0; z-index: 2000; background: transparent; }
+.loader-splash .loader-half { position: absolute; top: 0; bottom: 0; width: 50%; background: var(--color-night); transition: transform 650ms cubic-bezier(0.76, 0, 0.24, 1) 200ms; }
+.loader-splash .loader-half-l { left: 0; }
+.loader-splash .loader-half-r { right: 0; }
+.loader-splash.is-leaving { pointer-events: none; }
+.loader-splash.is-leaving .loader-stack { opacity: 0; }
+.loader-splash.is-leaving .loader-half-l { transform: translateX(-100%); }
+.loader-splash.is-leaving .loader-half-r { transform: translateX(100%); }
 
+/* Compact (inline spinner): just the mark, in the accent colour so it reads on the paper background. */
+.loader-compact { color: var(--color-accent); }
+.loader-compact .loader-mark { width: 2.75rem; }
+
+/* The mark: four pieces fly in from scattered positions, then a light sweep passes over them. */
+.loader-mark path { transform-box: fill-box; transform-origin: center; opacity: 0; animation: loader-piece 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+.loader-mark #mark-main { --x: 0px; --y: 440px; --r: -10deg; }
+.loader-mark #mark-left { --x: -600px; --y: 160px; --r: -28deg; animation-delay: 0.07s; }
+.loader-mark #mark-top-right { --x: 540px; --y: -440px; --r: 32deg; animation-delay: 0.14s; }
+.loader-mark #mark-bottom { --x: -180px; --y: 540px; --r: 18deg; animation-delay: 0.21s; }
 @keyframes loader-piece {
-  0%, 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0.25; }
-  45%, 60% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  0% { opacity: 0; transform: translate(var(--x), var(--y)) rotate(var(--r)); fill: currentColor; }
+  36% { opacity: 1; transform: translate(0, 0) rotate(0); fill: currentColor; }
+  42% { fill: #f3dca0; }
+  50%, 84% { opacity: 1; transform: translate(0, 0) rotate(0); fill: currentColor; }
+  94%, 100% { opacity: 0; transform: translate(0, 0) rotate(0); fill: currentColor; }
 }
-@keyframes loader-bar {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(250%); }
+
+/* The wordmark: HADORN letters rise one by one, STUDIO slides together from the sides. */
+.loader-word path { transform-box: fill-box; transform-origin: center; opacity: 0; animation: loader-letter 2.8s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
+.loader-word path[id^='studio-'] { animation-name: loader-studio; }
+@keyframes loader-letter {
+  0%, 28% { opacity: 0; transform: translateY(46px); }
+  42%, 84% { opacity: 1; transform: translateY(0); }
+  94%, 100% { opacity: 0; transform: translateY(0); }
 }
+@keyframes loader-studio {
+  0%, 46% { opacity: 0; transform: translateX(var(--sx)); }
+  58%, 84% { opacity: 1; transform: translateX(0); }
+  94%, 100% { opacity: 0; transform: translateX(0); }
+}
+.loader-word path#H:not([id^='studio-']) { animation-delay: 0.00s; }
+.loader-word path#A:not([id^='studio-']) { animation-delay: 0.07s; }
+.loader-word path#D:not([id^='studio-']) { animation-delay: 0.14s; }
+.loader-word path#O:not([id^='studio-']) { animation-delay: 0.21s; }
+.loader-word path#R:not([id^='studio-']) { animation-delay: 0.28s; }
+.loader-word path#N:not([id^='studio-']) { animation-delay: 0.35s; }
+.loader-word path#studio-S { --sx: -150px; }
+.loader-word path#studio-T { --sx: -90px; }
+.loader-word path#studio-U { --sx: -30px; }
+.loader-word path#studio-D { --sx: 30px; }
+.loader-word path#studio-I { --sx: 90px; }
+.loader-word path#studio-O { --sx: 150px; }
+
 @media (prefers-reduced-motion: reduce) {
-  .loader-mark path { animation: none; }
-  .loader-bar > i { animation: none; width: 100%; opacity: 0.5; }
+  .loader-mark path, .loader-word path { animation: none; opacity: 1; transform: none; }
+  .loader-splash .loader-half { transition: none; }
 }
