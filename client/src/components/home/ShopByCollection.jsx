@@ -3,6 +3,7 @@ import { responsiveImage } from '../../utils/images';
 import { useCategories } from '../../hooks/useCategories';
 import Spinner from '../common/Spinner';
 import InfiniteCarousel from '../common/InfiniteCarousel';
+import { useScrollMotion } from '../../hooks/useScrollMotion';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { useGSAP } from '@gsap/react';
 import { gsap, DURATION, EASE, prefersReducedMotion } from '../../lib/motion/gsapConfig';
@@ -33,18 +34,22 @@ export default function ShopByCollection() {
     { scope: gridRef, dependencies: [categories.length] }
   );
 
+  const motionRef = useScrollMotion([categories.length, isLoading]);
+
   if (isLoading) return <Spinner />;
 
   return (
-    <section className="container-page py-24">
+    <section ref={motionRef} className="container-page py-24">
       <div className="mb-12 text-center">
         <p className="text-xs uppercase tracking-[0.2em] text-stone-600">Explore</p>
-        <h2 className="mt-3 font-display text-3xl">Shop by Collection</h2>
+        <h2 data-split className="mt-3 font-display text-3xl">Shop by Collection</h2>
       </div>
 
       <div ref={gridRef} className="-mx-6 md:-mx-12">
         <InfiniteCarousel
           label="Shop by collection"
+          autoplay={36}
+          fade
           items={categories}
           gapClassName="gap-4"
           itemClassName="w-[44vw] sm:w-[30vw] md:w-[calc((100%-3rem)/4)]"

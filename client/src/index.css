@@ -57,6 +57,31 @@ html.lenis, html.lenis body { height: auto; }
   scroll-padding-inline: max(var(--pad), calc((100% - 90rem) / 2 + var(--pad)));
   scrollbar-width: none;
 }
+/* Fading edges: cards dissolve toward both sides, with a soft blur strip over the fade. */
+.carousel-fade {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent);
+}
+.carousel-blur {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 5;
+  width: clamp(40px, 9%, 140px);
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+.carousel-blur-left {
+  left: 0;
+  -webkit-mask-image: linear-gradient(to right, #000, transparent);
+  mask-image: linear-gradient(to right, #000, transparent);
+}
+.carousel-blur-right {
+  right: 0;
+  -webkit-mask-image: linear-gradient(to left, #000, transparent);
+  mask-image: linear-gradient(to left, #000, transparent);
+}
 .carousel-scroller::-webkit-scrollbar { display: none; }
 @media (min-width: 768px) { .carousel-scroller { --pad: 3rem; } }
 

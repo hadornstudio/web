@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
+import { useScrollMotion } from '../../hooks/useScrollMotion';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { responsiveImage } from '../../utils/images';
 import { gsap, DURATION, EASE, prefersReducedMotion } from '../../lib/motion/gsapConfig';
@@ -10,6 +11,7 @@ const FABRIC_BEADING_IMAGE = 'https://images.unsplash.com/photo-1715374033196-0f
 export default function FabricBeading() {
   const textRef = useScrollReveal({ y: 20, stagger: 0.12 });
   const imageWrapRef = useRef(null);
+  const motionRef = useScrollMotion();
 
   useGSAP(
     () => {
@@ -30,10 +32,10 @@ export default function FabricBeading() {
   );
 
   return (
-    <section className="container-page grid grid-cols-1 items-center gap-12 py-24 md:grid-cols-2 md:gap-20">
-      <div ref={textRef} className="order-2 md:order-1">
+    <section ref={motionRef} className="container-page grid grid-cols-1 items-center gap-12 py-24 md:grid-cols-2 md:gap-20">
+      <div ref={textRef} data-drift="26" className="order-2 md:order-1">
         <p className="text-xs uppercase tracking-[0.2em] text-stone-600">A Signature Technique</p>
-        <h2 className="mt-3 font-display text-3xl">Beaded on fabric, row by row.</h2>
+        <h2 data-split className="mt-3 font-display text-3xl">Beaded on fabric, row by row.</h2>
         <p className="mt-6 text-stone-600">
           Alongside strung and knotted work, fabric beading runs through a great deal of what we make —
           beads woven directly onto cloth and fiber on a hand loom, one row at a time. It's slower than
@@ -52,9 +54,10 @@ export default function FabricBeading() {
         </Link>
       </div>
 
-      <div ref={imageWrapRef} className="order-1 aspect-[4/5] overflow-hidden bg-cream md:order-2">
+      <div ref={imageWrapRef} data-drift="-26" className="order-1 aspect-[4/5] overflow-hidden bg-cream md:order-2">
         <img
           {...responsiveImage(FABRIC_BEADING_IMAGE, '(min-width: 768px) 45vw, 100vw', [600, 1000, 1400])}
+          data-zoom
           loading="lazy"
           decoding="async"
           alt="Beads woven onto fabric on a hand loom"

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { prefersReducedMotion } from '../../lib/motion/gsapConfig';
 
 const SETS = 3;
 
@@ -7,6 +8,10 @@ const SETS = 3;
 // either edge, the scroll position jumps by exactly one set — invisible, because the sets are identical.
 // If every card already fits on screen (e.g. five collection tiles on a wide desktop) it stays a plain,
 // non-looping row.
+//
+// `autoplay` (px per second) makes it drift on its own, like a marquee. It pauses while the visitor hovers,
+// touches, focuses or scrolls it, while it's off-screen or the tab is hidden, and never runs for visitors
+// who prefer reduced motion. `fade` softens both edges (the cards dissolve and blur as they leave).
 export default function InfiniteCarousel({
   items,
   renderItem,
@@ -14,6 +19,8 @@ export default function InfiniteCarousel({
   gapClassName = 'gap-4',
   label,
   arrows = true,
+  autoplay = 0,
+  fade = false,
   className = '',
 }) {
   const scrollerRef = useRef(null);
@@ -86,6 +93,60 @@ export default function InfiniteCarousel({
     else if (x > w * 1.7) el.scrollLeft = x - w;
   };
 
+  // Auto-drift. `pos` is a float accumulator because scrollLeft is quantised to whole pixels (slow speeds would stall).
+  const hold = useRef({ hover: false, touch: false, focus: false, visible: true, until: 0 });
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!autoplay || !loop || !el || prefersReducedMotion()) return undefined;
+    const h = hold.current;
+    let raf = 0;
+    let last = 0;
+    let pos = el.scrollLeft;
+    const frame = (now) => {
+      raf = requestAnimationFrame(frame);
+      const dt = Math.min(0.05, (now - (last || now)) / 1000);
+      last = now;
+      const paused = h.hover || h.touch || h.focus || !h.visible || document.hidden || now < h.until;
+      if (paused) {
+        pos = el.scrollLeft;
+        return;
+      }
+      pos += autoplay * dt;
+      el.scrollLeft = pos;
+      onScroll();
+      pos = el.scrollLeft;
+    };
+    raf = requestAnimationFrame(frame);
+    const io = new IntersectionObserver(([entry]) => {
+      h.visible = entry.isIntersecting;
+    });
+    io.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      io.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoplay, loop, count]);
+
+  const pause = (key, on) => () => {
+    hold.current[key] = on;
+    if (!on) hold.current.until = performance.now() + 1800; // let momentum / a click settle before drifting again
+  };
+  const hoverProps = autoplay
+    ? {
+        onMouseEnter: pause('hover', true),
+        onMouseLeave: pause('hover', false),
+        onTouchStart: pause('touch', true),
+        onTouchEnd: pause('touch', false),
+        onTouchCancel: pause('touch', false),
+        onFocus: pause('focus', true),
+        onBlur: pause('focus', false),
+        onWheel: () => {
+          hold.current.until = performance.now() + 1800;
+        },
+      }
+    : {};
+
   const step = (direction) => {
     const el = scrollerRef.current;
     const style = getComputedStyle(el);
@@ -96,8 +157,12 @@ export default function InfiniteCarousel({
   if (count === 0) return null;
 
   return (
-    <div className={`relative ${className}`} role="region" aria-roledescription="carousel" aria-label={label}>
-      <div ref={scrollerRef} onScroll={onScroll} className={`carousel-scroller flex snap-x snap-proximity overflow-x-auto overscroll-x-contain ${gapClassName}`}>
+    <div className={`relative ${className}`} role="region" aria-roledescription="carousel" aria-label={label} {...hoverProps}>
+      <div
+        ref={scrollerRef}
+        onScroll={onScroll}
+        className={`carousel-scroller flex overflow-x-auto overscroll-x-contain ${autoplay ? '' : 'snap-x snap-proximity'} ${fade ? 'carousel-fade' : ''} ${gapClassName}`}
+      >
         {Array.from({ length: loop ? SETS : 1 }).map((_, set) =>
           items.map((item, i) => {
             const isClone = loop && set !== 1;
@@ -113,6 +178,13 @@ export default function InfiniteCarousel({
           })
         )}
       </div>
+
+      {fade && (
+        <>
+          <span aria-hidden="true" className="carousel-blur carousel-blur-left" />
+          <span aria-hidden="true" className="carousel-blur carousel-blur-right" />
+        </>
+      )}
 
       {arrows && loop && (
         <>

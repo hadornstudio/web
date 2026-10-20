@@ -1,17 +1,19 @@
 import { Link } from 'react-router-dom';
 import Button from '../common/Button';
+import { useScrollMotion } from '../../hooks/useScrollMotion';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 export default function NewsletterCTA() {
   // Wrapped in one extra layer so the whole block reveals as a single grouped
   // fade-up rather than staggering per-child — this is a calm closing CTA, not a showcase.
   const groupRef = useScrollReveal();
+  const motionRef = useScrollMotion();
 
   return (
-    <section className="bg-ink py-24 text-paper">
+    <section ref={motionRef} className="relative z-10 -mt-10 rounded-t-[2rem] bg-ink py-24 text-paper md:-mt-14 md:rounded-t-[3rem]">
       <div ref={groupRef} className="container-page">
         <div className="flex flex-col items-center gap-6 text-center">
-          <h2 className="max-w-xl font-display text-3xl">
+          <h2 data-split className="max-w-xl font-display text-3xl">
             Find the piece that's already yours.
           </h2>
           <p className="max-w-md text-stone-300">

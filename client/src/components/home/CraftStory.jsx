@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useScrollMotion } from '../../hooks/useScrollMotion';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { useParallax } from '../../hooks/useParallax';
 import { responsiveImage } from '../../utils/images';
@@ -8,7 +8,7 @@ const CRAFT_IMAGE = 'https://images.unsplash.com/photo-1659032882718-3e54e7da86a
 export default function CraftStory() {
   const textRef = useScrollReveal({ y: 20, stagger: 0.15, start: 'top 75%' });
   const imageRef = useParallax({ amount: 30 });
-  const wrapperRef = useRef(null);
+  const wrapperRef = useScrollMotion();
 
   return (
     <section
@@ -23,13 +23,13 @@ export default function CraftStory() {
           grid cell is only as tall as its own content has nowhere to visibly stick. */}
       <div className="md:sticky md:top-28 md:self-start">
         <div className="aspect-[4/5] overflow-hidden bg-cream">
-          <img ref={imageRef} {...responsiveImage(CRAFT_IMAGE, '(min-width: 768px) 45vw, 100vw', [600, 1000, 1400])} loading="lazy" decoding="async" alt="Hadorn's workspace" className="h-full w-full object-cover" />
+          <img ref={imageRef} data-zoom {...responsiveImage(CRAFT_IMAGE, '(min-width: 768px) 45vw, 100vw', [600, 1000, 1400])} loading="lazy" decoding="async" alt="Hadorn's workspace" className="h-full w-full object-cover" />
         </div>
       </div>
 
-      <div ref={textRef} className="md:flex md:flex-col md:justify-center">
+      <div ref={textRef} data-drift="26" className="md:flex md:flex-col md:justify-center">
         <p className="text-xs uppercase tracking-[0.2em] text-stone-600">Our Craft</p>
-        <h2 className="mt-3 font-display text-3xl">Made by hand, deliberately slow.</h2>
+        <h2 data-split className="mt-3 font-display text-3xl">Made by hand, deliberately slow.</h2>
         <p className="mt-6 text-stone-600">
           Every Hadorn piece begins with loose beads — freshwater pearl, sterling silver, lava stone, glass —
           sorted by hand for tone and shape before a single knot is tied. Much of our work is woven directly

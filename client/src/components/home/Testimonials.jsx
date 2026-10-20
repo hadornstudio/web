@@ -1,3 +1,4 @@
+import { useScrollMotion } from '../../hooks/useScrollMotion';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import InfiniteCarousel from '../common/InfiniteCarousel';
 
@@ -26,17 +27,20 @@ const TESTIMONIALS = [
 
 export default function Testimonials() {
   const revealRef = useScrollReveal({ y: 20, stagger: 0.1 });
+  const motionRef = useScrollMotion();
 
   return (
-    <section className="py-24">
+    <section ref={motionRef} className="py-24">
       <div className="container-page mb-12 text-center">
         <p className="text-xs uppercase tracking-[0.2em] text-stone-600">In Their Words</p>
-        <h2 className="mt-3 font-display text-3xl">From Hadorn Customers</h2>
+        <h2 data-split className="mt-3 font-display text-3xl">From Hadorn Customers</h2>
       </div>
 
       <div ref={revealRef}>
         <InfiniteCarousel
           label="Customer testimonials"
+          autoplay={30}
+          fade
           items={TESTIMONIALS}
           gapClassName="gap-6"
           itemClassName="w-[78vw] sm:w-72 md:w-[calc((100%-3rem)/3)]"
