@@ -10,6 +10,9 @@ function sanitizeRefFields(body) {
   const payload = { ...body };
   if (!payload.product) delete payload.product;
   if (!payload.category) delete payload.category;
+  // No model URL = no model: drop the whole sub-document (and clear it on update) instead of storing defaults.
+  if (!payload.model?.url) payload.model = undefined;
+  else payload.model = { ...payload.model, format: payload.model.format || (/\.glb(\?|$)/i.test(payload.model.url) ? 'glb' : 'splat') };
   return payload;
 }
 
@@ -77,7 +80,9 @@ export const createGalleryItem = asyncHandler(async (req, res) => {
 });
 
 export const updateGalleryItem = asyncHandler(async (req, res) => {
-  const item = await GalleryItem.findByIdAndUpdate(req.params.id, sanitizeRefFields(req.body), {
+  const { model, ...rest } = sanitizeRefFields(req.body);
+  const update = model ? { ...rest, model } : { ...rest, $unset: { model: 1 } }; // cleared model -> remove it
+  const item = await GalleryItem.findByIdAndUpdate(req.params.id, update, {
     new: true,
     runValidators: true,
   });

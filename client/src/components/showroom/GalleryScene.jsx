@@ -1,17 +1,27 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { gsap } from '../../lib/motion/gsapConfig';
 import { isLowEndDevice } from '../../utils/webgl';
-import { SHOWROOM, bayLayout, hallEndZ, standDistance, baseFov } from './showroomConfig';
+import { SHOWROOM, bayLayout, hallEndZ, standDistance, baseFov, modelGeometry } from './showroomConfig';
+import DressModel from './DressModel';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const GOLD = '#c9a45c';
 
-function stopFor(index, aspect, work) {
+function stopFor(index, aspect, work, inspecting = false, failed = false) {
   const { width, eyeHeight, startZ } = SHOWROOM.hall;
   if (index < 0) return { pos: new THREE.Vector3(0, eyeHeight, startZ), look: new THREE.Vector3(0, eyeHeight, -30) };
+  if (work?.model && !failed) {
+    // A 3D piece on its plinth: stand back to see all of it; when inspecting, step right up and look at its middle.
+    const g = modelGeometry(index, work, aspect, inspecting);
+    const lift = Math.min(1, Math.max(0, (1.7 - aspect) / 1.1)) * 0.25 * (work.model.height ?? 1.7); // story card covers the bottom on phones
+    return {
+      pos: new THREE.Vector3(g.standX, inspecting ? g.centreY : eyeHeight, g.z),
+      look: new THREE.Vector3(g.x, g.centreY - lift - (inspecting ? 0 : 0.05), g.z),
+    };
+  }
   const { side, z } = bayLayout(index);
   const x = side * (width / 2 - standDistance(aspect));
   // Bays with extra photos hang them to the right of the main piece, so aim a little that way.
@@ -201,32 +211,119 @@ function Placeholder({ position, size = [1.6, 1.2] }) {
   );
 }
 
-function Bay({ work, index, near, glowTex }) {
+// A model that fails to download or parse must not take the whole bay with it: report it and the bay falls back
+// to the wall photo.
+class ModelBoundary extends Component {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error) {
+    console.warn('Showroom model failed to load:', error?.message || error);
+    this.props.onFail?.();
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+function Plinth({ glowTex }) {
+  const { radius, height } = SHOWROOM.plinth;
+  return (
+    <group>
+      <mesh position={[0, height / 2, 0]}>
+        <cylinderGeometry args={[radius, radius * 1.06, height, 48]} />
+        <meshStandardMaterial color="#241a13" roughness={0.45} metalness={0.15} />
+      </mesh>
+      <mesh position={[0, height + 0.002, 0]} rotation-x={-Math.PI / 2}>
+        <ringGeometry args={[radius - 0.05, radius - 0.035, 64]} />
+        <meshBasicMaterial color={GOLD} toneMapped={false} />
+      </mesh>
+      {/* pool of warm light around the plinth */}
+      <mesh position={[0, 0.012, 0]} rotation-x={-Math.PI / 2}>
+        <circleGeometry args={[1.5, 40]} />
+        <meshBasicMaterial map={glowTex} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function ModelBay({ work, index, near, glowTex, active, inspecting, inputRef, onInspect, onSelect, onFail }) {
+  const { side, z } = bayLayout(index);
+  const { distance, height: plinthH } = SHOWROOM.plinth;
+  const H = work.model.height ?? 1.7;
+  const click = (e) => {
+    if (e.delta > 6) return; // a drag, not a tap
+    e.stopPropagation();
+    if (active) onInspect();
+    else onSelect(index);
+  };
+  return (
+    <group position={[side * (SHOWROOM.hall.width / 2 - distance), 0, z]}>
+      <Plinth glowTex={glowTex} />
+      {near && (
+        <ModelBoundary onFail={onFail}>
+          <Suspense fallback={null}>
+            <DressModel model={work.model} inputRef={active ? inputRef : undefined} spin={inspecting && active ? 0 : 0.18} position={[0, plinthH, 0]} />
+          </Suspense>
+        </ModelBoundary>
+      )}
+      {/* invisible click target the size of the piece */}
+      <mesh
+        position={[0, plinthH + H / 2, 0]}
+        onClick={click}
+        onPointerOver={() => (document.body.style.cursor = 'pointer')}
+        onPointerOut={() => (document.body.style.cursor = '')}
+      >
+        <cylinderGeometry args={[0.55, 0.55, H, 12]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function Bay({ work, index, near, glowTex, active, inspecting, failed, inputRef, onInspect, onSelect, onFail }) {
   const { side, z } = bayLayout(index);
   const rotY = side < 0 ? Math.PI / 2 : -Math.PI / 2;
   const [main, ...extras] = work.images;
   const smalls = extras.slice(0, 2);
 
   return (
-    <group position={[side * (SHOWROOM.hall.width / 2), 0, z]} rotation={[0, rotY, 0]}>
-      <mesh position={[0.4, 1.6, 0.01]}>
-        <planeGeometry args={[6, 3.6]} />
-        <meshBasicMaterial map={glowTex} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
-      </mesh>
-      {near && main ? (
-        <>
-          <Suspense fallback={<Placeholder position={[0, 1.55, 0.01]} />}>
-            <ArtPanel url={main} height={1.5} maxWidth={2.2} position={[0, 1.55, 0.03]} />
-          </Suspense>
-          {smalls.map((url, i) => (
-            <Suspense key={url} fallback={null}>
-              <ArtPanel url={url} height={0.85} maxWidth={1.1} position={[1.95, i === 0 ? 2.0 : 0.95, 0.03]} />
-            </Suspense>
-          ))}
-        </>
-      ) : (
-        <Placeholder position={[0, 1.55, 0.01]} />
+    <group>
+      {work.model && !failed && (
+        <ModelBay
+          work={work}
+          index={index}
+          near={near}
+          glowTex={glowTex}
+          active={active}
+          inspecting={inspecting}
+          inputRef={inputRef}
+          onInspect={onInspect}
+          onSelect={onSelect}
+          onFail={onFail}
+        />
       )}
+      <group position={[side * (SHOWROOM.hall.width / 2), 0, z]} rotation={[0, rotY, 0]}>
+        <mesh position={[0.4, 1.6, 0.01]}>
+          <planeGeometry args={[6, 3.6]} />
+          <meshBasicMaterial map={glowTex} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+        </mesh>
+        {work.model && !failed ? null : near && main ? (
+          <>
+            <Suspense fallback={<Placeholder position={[0, 1.55, 0.01]} />}>
+              <ArtPanel url={main} height={1.5} maxWidth={2.2} position={[0, 1.55, 0.03]} />
+            </Suspense>
+            {smalls.map((url, i) => (
+              <Suspense key={url} fallback={null}>
+                <ArtPanel url={url} height={0.85} maxWidth={1.1} position={[1.95, i === 0 ? 2.0 : 0.95, 0.03]} />
+              </Suspense>
+            ))}
+          </>
+        ) : (
+          <Placeholder position={[0, 1.55, 0.01]} />
+        )}
+      </group>
     </group>
   );
 }
@@ -271,12 +368,13 @@ function Marker({ position, onSelect }) {
   );
 }
 
-function CameraRig({ works, index, instant, inputRef }) {
+function CameraRig({ works, index, instant, inputRef, inspecting, failed }) {
   const { camera, size } = useThree();
   const aspect = size.width / size.height;
   const poseRef = useRef(null);
+  const isFailed = failed.has(index);
   if (!poseRef.current) {
-    const s = stopFor(index, aspect, works[index]);
+    const s = stopFor(index, aspect, works[index], false, isFailed);
     poseRef.current = { pos: s.pos.clone(), look: s.look.clone() };
   }
   const dir = useMemo(() => new THREE.Vector3(), []);
@@ -284,7 +382,7 @@ function CameraRig({ works, index, instant, inputRef }) {
 
   useEffect(() => {
     const pose = poseRef.current;
-    const target = stopFor(index, aspect, works[index]);
+    const target = stopFor(index, aspect, works[index], inspecting, isFailed);
     gsap.killTweensOf([pose.pos, pose.look]);
     if (instant) {
       pose.pos.copy(target.pos);
@@ -294,7 +392,7 @@ function CameraRig({ works, index, instant, inputRef }) {
     const opts = { duration: SHOWROOM.travelSec, ease: 'power2.inOut' };
     gsap.to(pose.pos, { x: target.pos.x, y: target.pos.y, z: target.pos.z, ...opts });
     gsap.to(pose.look, { x: target.look.x, y: target.look.y, z: target.look.z, ...opts });
-  }, [index, aspect, instant, works]);
+  }, [index, aspect, instant, works, inspecting, isFailed]);
 
   useFrame((_, dt) => {
     const pose = poseRef.current;
@@ -303,6 +401,9 @@ function CameraRig({ works, index, instant, inputRef }) {
     input.yawS += (input.yaw - input.yawS) * k;
     input.pitchS += (input.pitch - input.pitchS) * k;
     input.fovS += (input.fov - input.fovS) * k;
+    // While inspecting, the piece turns on its own after a few idle seconds; dragging takes over again.
+    if (inspecting && performance.now() - (input.lastTouch || 0) > 2500) input.orbit += dt * 0.35;
+    input.orbitS += (input.orbit - input.orbitS) * k;
 
     dir.copy(pose.look).sub(pose.pos).normalize();
     dir.applyAxisAngle(UP, input.yawS);
@@ -321,13 +422,15 @@ function CameraRig({ works, index, instant, inputRef }) {
   return null;
 }
 
-function SceneContents({ works, index, instant, inputRef, onSelect }) {
+function SceneContents({ works, index, instant, inputRef, onSelect, inspecting, onInspect }) {
   const { glowTex } = useRoomTextures();
   const { size } = useThree();
   const aspect = size.width / size.height;
   const [loaded, setLoaded] = useState(() => new Set());
+  const [failed, setFailed] = useState(() => new Set());
 
-  // Stream bays in as the visitor approaches: first three up front, then a window around the current one.
+  // Stream bays in as the visitor approaches: first three up front, then a window around the current one. Splat pieces
+  // are stricter (the piece you are at plus its neighbours): every live splat re-sorts its points each frame.
   useEffect(() => {
     setLoaded((prev) => {
       const next = new Set(prev);
@@ -344,18 +447,32 @@ function SceneContents({ works, index, instant, inputRef, onSelect }) {
       <fog attach="fog" args={['#1d1611', 18, 40]} />
       <hemisphereLight args={['#fff1da', '#6b4a2b', 1.15]} />
       <directionalLight position={[2, 4, 3]} intensity={0.55} />
-      <CameraRig works={works} index={index} instant={instant} inputRef={inputRef} />
+      <CameraRig works={works} index={index} instant={instant} inputRef={inputRef} inspecting={inspecting} failed={failed} />
       <Room count={works.length} />
       {works.map((work, i) => (
-        <Bay key={work.id} work={work} index={i} near={loaded.has(i)} glowTex={glowTex} />
+        <Bay
+          key={work.id}
+          work={work}
+          index={i}
+          near={loaded.has(i) && (work.model?.format !== 'splat' || (index < 0 ? i < 2 : Math.abs(i - index) <= 1))}
+          glowTex={glowTex}
+          active={i === index}
+          inspecting={inspecting}
+          failed={failed.has(i)}
+          inputRef={inputRef}
+          onInspect={onInspect}
+          onSelect={onSelect}
+          onFail={() => setFailed((prev) => new Set(prev).add(i))}
+        />
       ))}
       {works.map((work, i) => {
-        if (i === index) return null;
+        if (i === index || inspecting) return null;
         const { side, z } = bayLayout(i);
+        const standX = work.model && !failed.has(i) ? modelGeometry(i, work, aspect).standX : side * (SHOWROOM.hall.width / 2 - standDistance(aspect));
         return (
           <Marker
             key={work.id}
-            position={[side * (SHOWROOM.hall.width / 2 - standDistance(aspect)), 0, z]}
+            position={[standX, 0, z]}
             onSelect={() => onSelect(i)}
           />
         );

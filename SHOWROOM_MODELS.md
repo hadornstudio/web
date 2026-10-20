@@ -1,0 +1,45 @@
+# Showroom 3D models — from a video of a piece to the showroom
+
+The showroom (`/showroom`) hangs each piece on its own plinth as a 3D model. Visitors walk up to it, tap
+**Look closer in 3D**, then drag to turn it and scroll/pinch to zoom. Once *any* gallery item has a model, the
+showroom shows only the items that have one; until then it falls back to the gallery photos.
+
+## 1. Filming a piece (this decides the quality)
+
+- Put the piece on a **mannequin or dress form**, or hang it so it **cannot sway**. Plain background, nothing else in shot.
+- **Soft, even light** (daylight from a big window, or two softboxes). No spotlights, no mirrors, no windows reflected in the beads.
+- **4K, 60–90 seconds.** Walk slowly around it keeping it centred: one full circle at chest height, one low, one high.
+- **Lock focus and exposure** (hold-to-lock on a phone) so brightness does not change between frames.
+- Keep every frame sharp: slow movement, no digital zoom, no filters or stabilisation crop if you can avoid it.
+- Beads, sequins and sheer fabric are hard for any 3D capture. Expect to re-film a piece once; the first test video is
+  the cheapest way to learn what works.
+
+## 2. Turn the video into a splat
+
+Use any Gaussian-splat capture tool and export a **.ply** (or a **.splat**). Examples: Luma, Polycam, KIRI Engine (upload
+the video in the app), or Brush / OpenSplat on a Mac (run locally, slower but private).
+
+## 3. Convert and clean it
+
+```bash
+node scripts/ply-to-splat.mjs capture.ply piece.splat --max 300000
+```
+
+This centres the piece, stands it on the floor, scales it to 1.7 m tall, removes floaters and keeps the 300,000 most visible
+points (about 10 MB; fine on phones). Useful options: `--up +y|-y|+z|-z|+x|-x` (which way is up in the capture, default `-y`),
+`--height 1.5` (metres), `--radius 0.9` (cut away the room around the piece), `--max 600000` (more detail, bigger file).
+
+A `.glb` mesh also works and needs no conversion.
+
+## 4. Add it in the admin
+
+Admin → Gallery → edit (or add) the item → **3D model**: upload the `.splat` / `.glb`, or paste an https link. The preview
+uses the same viewer as the showroom; adjust **size**, **raise/lower** and the three **tilt/turn** sliders until it stands
+upright on the plinth, then save. Uploads go to Cloudinary; if a large file is refused, host it anywhere that serves https and
+paste the link.
+
+## Notes
+
+- Files from the converter are y-up and 1.7 m tall; raw files from other tools are not, so use the sliders.
+- The viewer downloads the whole file before showing it (a 10 MB splat is a second or two on broadband).
+- Only the piece you are standing at and its neighbours render live; the others load as you approach.

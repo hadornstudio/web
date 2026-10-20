@@ -78,7 +78,13 @@ export default function ShowroomPage() {
   const [searchParams] = useSearchParams();
   const forceList = searchParams.get('view') === 'list';
   const { data, isLoading } = useGalleryItems({ sort: 'newest' });
-  const works = useMemo(() => toWorks(data?.data?.items), [data]);
+  // The showroom is for the 3D models: once any piece has one, only pieces with a model are hung. Until the first
+  // model exists the hall shows the photo works, so it is never empty.
+  const works = useMemo(() => {
+    const all = toWorks(data?.data?.items);
+    const withModels = all.filter((w) => w.model);
+    return withModels.length ? withModels : all;
+  }, [data]);
   const [hasWebgl] = useState(webglAvailable);
   const [enter3D, setEnter3D] = useState(false);
 

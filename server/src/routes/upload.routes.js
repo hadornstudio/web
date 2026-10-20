@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { protect, authorize } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
-import { uploadSingle, uploadAdMedia } from '../middleware/upload.js';
-import { uploadImage, uploadAdMediaFile } from '../controllers/upload.controller.js';
+import { uploadSingle, uploadAdMedia, uploadModel } from '../middleware/upload.js';
+import { uploadImage, uploadAdMediaFile, uploadModelFile } from '../controllers/upload.controller.js';
 
 const router = Router();
 
@@ -14,5 +14,7 @@ router.post('/', protect, authorize('admin'), uploadSingle, uploadImage);
 router.post('/inquiry', authLimiter, uploadSingle, uploadImage);
 
 router.post('/ad-media', protect, authorize('admin'), uploadAdMedia, uploadAdMediaFile);
+
+router.post('/model', protect, authorize('admin'), uploadModel, uploadModelFile);
 
 export default router;

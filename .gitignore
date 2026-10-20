@@ -19,3 +19,4 @@ client/public/showroom/intro/
 
 # local preview database (scripts/dev-local.js)
 server/.local-db/
+client/public/models/gallery/

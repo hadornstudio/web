@@ -9,6 +9,7 @@ import { SHOWROOM, bayLayout, hallEndZ } from './showroomConfig';
 const BASE_FOV = 50;
 const MIN_FOV = 28;
 const MAX_FOV = 62;
+const INSPECT_MIN_FOV = 24;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const BTN = 'border border-ivory/60 bg-night/40 px-5 py-2.5 font-studio text-[11px] uppercase tracking-[0.25em] text-ivory backdrop-blur-sm transition-colors hover:bg-ivory hover:text-night';
 
@@ -41,12 +42,29 @@ export default function GalleryExperience({ works, instant, onReady }) {
   const [index, setIndex] = useState(-1);
   const [menuOpen, setMenuOpen] = useState(false);
   const [hintGone, setHintGone] = useState(false);
+  const [inspecting, setInspecting] = useState(false);
+  const inspectingRef = useRef(false);
   const isTouch = useMediaQuery('(pointer: coarse)');
   const wrapRef = useRef(null);
-  const inputRef = useRef({ yaw: 0, yawS: 0, pitch: 0, pitchS: 0, fov: BASE_FOV, fovS: BASE_FOV });
+  const inputRef = useRef({ yaw: 0, yawS: 0, pitch: 0, pitchS: 0, fov: BASE_FOV, fovS: BASE_FOV, orbit: 0, orbitS: 0, lastTouch: 0 });
   const indexRef = useRef(-1);
   const lastNav = useRef(0);
   const cardRef = useRef(null);
+
+  // Inspecting = a close-up of the piece on its plinth that the visitor can turn and zoom. Only for pieces with a model.
+  const setInspect = useCallback(
+    (on) => {
+      const allowed = on && works[indexRef.current]?.model;
+      const next = Boolean(allowed);
+      const input = inputRef.current;
+      input.yaw = input.pitch = 0;
+      input.fov = BASE_FOV;
+      input.lastTouch = performance.now();
+      inspectingRef.current = next;
+      setInspecting(next);
+    },
+    [works]
+  );
 
   const go = useCallback(
     (i) => {
@@ -56,6 +74,8 @@ export default function GalleryExperience({ works, instant, onReady }) {
       const input = inputRef.current;
       input.yaw = input.pitch = 0;
       input.fov = BASE_FOV;
+      inspectingRef.current = false;
+      setInspecting(false);
       setIndex(next);
       setHintGone(true);
       setMenuOpen(false);
@@ -76,6 +96,12 @@ export default function GalleryExperience({ works, instant, onReady }) {
     let acc = 0;
     const onWheel = (e) => {
       e.preventDefault();
+      if (inspectingRef.current) {
+        const input = inputRef.current;
+        input.fov = clamp(input.fov + e.deltaY * 0.05, INSPECT_MIN_FOV, MAX_FOV);
+        input.lastTouch = performance.now();
+        return;
+      }
       if (e.ctrlKey) {
         const input = inputRef.current;
         input.fov = clamp(input.fov + e.deltaY * 0.08, MIN_FOV, MAX_FOV);
@@ -88,6 +114,17 @@ export default function GalleryExperience({ works, instant, onReady }) {
       }
     };
     const onKey = (e) => {
+      if (inspectingRef.current) {
+        const input = inputRef.current;
+        if (e.key === 'Escape') setInspect(false);
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          input.orbit += e.key === 'ArrowLeft' ? -0.3 : 0.3;
+          input.lastTouch = performance.now();
+        }
+        else if (e.key === 'ArrowUp') input.fov = clamp(input.fov - 4, INSPECT_MIN_FOV, MAX_FOV);
+        else if (e.key === 'ArrowDown') input.fov = clamp(input.fov + 4, INSPECT_MIN_FOV, MAX_FOV);
+        return;
+      }
       if (['ArrowRight', 'ArrowDown', 'PageDown'].includes(e.key)) step(1);
       else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) step(-1);
       else if (e.key === 'Home') go(-1);
@@ -99,7 +136,7 @@ export default function GalleryExperience({ works, instant, onReady }) {
       el.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKey);
     };
-  }, [step, go]);
+  }, [step, go, setInspect]);
 
   // Drag / swipe = look around (limited so nobody gets lost); two fingers = pinch zoom.
   useEffect(() => {
@@ -117,7 +154,11 @@ export default function GalleryExperience({ works, instant, onReady }) {
       const prev = pointers.get(e.pointerId);
       if (!prev) return;
       const input = inputRef.current;
-      if (pointers.size === 1) {
+      if (pointers.size === 1 && inspectingRef.current) {
+        input.orbit += (e.clientX - prev.x) * 0.009; // turn the piece
+        input.pitch = clamp(input.pitch + (e.clientY - prev.y) * 0.003, -0.3, 0.3);
+        input.lastTouch = performance.now();
+      } else if (pointers.size === 1) {
         input.yaw = clamp(input.yaw + (e.clientX - prev.x) * 0.004, -0.65, 0.65);
         input.pitch = clamp(input.pitch + (e.clientY - prev.y) * 0.003, -0.3, 0.3);
       }
@@ -125,7 +166,8 @@ export default function GalleryExperience({ works, instant, onReady }) {
       if (pointers.size === 2 && pinchStart) {
         const [a, b] = [...pointers.values()];
         const dist = Math.hypot(a.x - b.x, a.y - b.y);
-        input.fov = clamp(pinchStart.fov * (pinchStart.dist / dist), MIN_FOV, MAX_FOV);
+        input.fov = clamp(pinchStart.fov * (pinchStart.dist / dist), inspectingRef.current ? INSPECT_MIN_FOV : MIN_FOV, MAX_FOV);
+        input.lastTouch = performance.now();
       }
     };
     const onUp = (e) => {
@@ -158,7 +200,7 @@ export default function GalleryExperience({ works, instant, onReady }) {
 
   return (
     <div ref={wrapRef} className="absolute inset-0 touch-none select-none bg-night font-studio text-ivory">
-      <GalleryScene works={works} index={index} instant={instant} inputRef={inputRef} onSelect={go} onReady={onReady} />
+      <GalleryScene works={works} index={index} instant={instant} inputRef={inputRef} onSelect={go} onReady={onReady} inspecting={inspecting} onInspect={() => setInspect(true)} />
 
       {/* top bar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-night/70 to-transparent px-5 py-4">
@@ -197,10 +239,16 @@ export default function GalleryExperience({ works, instant, onReady }) {
 
       {/* story card + progress */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-gradient-to-t from-night/80 via-night/40 to-transparent px-5 pb-6 pt-24 md:px-10">
-        {!hintGone && (
+        {inspecting ? (
           <p className="w-full text-center text-[11px] font-light uppercase tracking-[0.3em] text-ivory/80">
-            {isTouch ? SHOWROOM.hint.touch : SHOWROOM.hint.desktop}
+            {isTouch ? SHOWROOM.hint.inspectTouch : SHOWROOM.hint.inspectDesktop}
           </p>
+        ) : (
+          !hintGone && (
+            <p className="w-full text-center text-[11px] font-light uppercase tracking-[0.3em] text-ivory/80">
+              {isTouch ? SHOWROOM.hint.touch : SHOWROOM.hint.desktop}
+            </p>
+          )
         )}
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div ref={cardRef} className="pointer-events-auto order-2 w-full max-w-md border border-ivory/20 bg-night/55 p-5 backdrop-blur-md md:order-1">
@@ -210,8 +258,15 @@ export default function GalleryExperience({ works, instant, onReady }) {
                   {[work.category, work.year].filter(Boolean).join(' · ') || 'From the studio'}
                 </p>
                 <h2 className="mt-2 font-studio text-2xl font-light leading-snug">{work.title}</h2>
-                {work.story && <p className="mt-2 max-h-28 overflow-auto text-sm font-light leading-relaxed text-ivory/80">{work.story}</p>}
-                <Link to={cta.to} state={cta.state} className={`${BTN} mt-4 inline-flex`}>{SHOWROOM.ctaLabel}</Link>
+                {work.story && !inspecting && <p className="mt-2 max-h-28 overflow-auto text-sm font-light leading-relaxed text-ivory/80">{work.story}</p>}
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {work.model && (
+                    <button type="button" onClick={() => setInspect(!inspecting)} className={`${BTN} ${inspecting ? '' : 'border-gold text-gold'}`}>
+                      {inspecting ? 'Back to the hall' : 'Look closer in 3D'}
+                    </button>
+                  )}
+                  <Link to={cta.to} state={cta.state} className={`${BTN} inline-flex`}>{SHOWROOM.ctaLabel}</Link>
+                </div>
               </>
             ) : (
               <>

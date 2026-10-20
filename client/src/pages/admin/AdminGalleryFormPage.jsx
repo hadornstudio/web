@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAdminGalleryItem, useCreateGalleryItem, useUpdateGalleryItem } from '../../hooks/useGallery';
 import { useCategories } from '../../hooks/useCategories';
@@ -8,9 +8,14 @@ import Select from '../../components/common/Select';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
 import ImageUploadField from '../../components/admin/ImageUploadField';
+import { uploadsApi } from '../../api/uploads';
 import { toast } from '../../store/useToastStore';
 
-const EMPTY_FORM = { title: '', description: '', images: [], category: '', product: '', sortOrder: 0, isActive: true };
+// three.js loads only when the owner actually opens the 3D preview.
+const ModelPreview = lazy(() => import('../../components/admin/ModelPreview'));
+
+const EMPTY_MODEL = { url: '', format: 'splat', height: 1.7, rotation: [0, 0, 0], offsetY: 0 };
+const EMPTY_FORM = { title: '', description: '', images: [], category: '', product: '', sortOrder: 0, isActive: true, model: EMPTY_MODEL };
 
 function toFormState(item) {
   return {
@@ -21,6 +26,7 @@ function toFormState(item) {
     product: item.product?._id || '',
     sortOrder: item.sortOrder ?? 0,
     isActive: item.isActive ?? true,
+    model: item.model?.url ? { ...EMPTY_MODEL, ...item.model } : EMPTY_MODEL,
   };
 }
 
@@ -38,6 +44,10 @@ export default function AdminGalleryFormPage() {
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState('');
+  const [modelUploading, setModelUploading] = useState(false);
+  const [modelProgress, setModelProgress] = useState(0);
+  const [modelError, setModelError] = useState('');
+  const modelInput = useRef(null);
 
   useEffect(() => {
     if (isEdit && item) setForm(toFormState(item));
@@ -47,6 +57,28 @@ export default function AdminGalleryFormPage() {
   if (isEdit && !isLoading && !item) return <p>Gallery item not found.</p>;
 
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+  const setModel = (patch) => setForm((f) => ({ ...f, model: { ...f.model, ...patch } }));
+  const setRotation = (axis, value) =>
+    setForm((f) => ({ ...f, model: { ...f.model, rotation: f.model.rotation.map((v, i) => (i === axis ? Number(value) : v)) } }));
+
+  const handleModelFile = async (file) => {
+    if (!file) return;
+    setModelError('');
+    setModelUploading(true);
+    setModelProgress(0);
+    try {
+      const res = await uploadsApi.uploadModel(file, (evt) => evt.total && setModelProgress(Math.round((evt.loaded / evt.total) * 100)));
+      setModel({ url: res.data.url, format: res.data.format });
+    } catch (err) {
+      setModelError(
+        err.response?.data?.message ||
+          'Upload failed. Very large files can be refused — host the file anywhere that serves https and paste the link instead.'
+      );
+    } finally {
+      setModelUploading(false);
+      if (modelInput.current) modelInput.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,6 +92,16 @@ export default function AdminGalleryFormPage() {
       product: form.product,
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
+      // no link = no model (the server clears it)
+      model: form.model.url
+        ? {
+            url: form.model.url.trim(),
+            format: form.model.format,
+            height: Number(form.model.height) || 1.7,
+            rotation: form.model.rotation.map(Number),
+            offsetY: Number(form.model.offsetY) || 0,
+          }
+        : null,
     };
 
     const mutation = isEdit ? updateItem : createItem;
@@ -118,6 +160,63 @@ export default function AdminGalleryFormPage() {
             custom-order inquiry with this image attached instead.
           </p>
         </div>
+
+        <fieldset className="flex flex-col gap-4 border border-stone-300 p-4">
+          <legend className="px-2 text-sm text-ink">3D model (shown in the showroom)</legend>
+          <p className="text-xs text-stone-600">
+            Once any piece has a model, the showroom hangs only pieces with a model, each on its own plinth (the photos still appear in the
+            gallery and as the fallback). Use a <strong>.splat</strong> capture or a <strong>.glb</strong> file. Training tools usually export
+            .ply — convert it first with <code>node scripts/ply-to-splat.mjs capture.ply piece.splat</code>, which also centres, levels and
+            trims it.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              ref={modelInput}
+              type="file"
+              accept=".splat,.glb"
+              className="hidden"
+              onChange={(e) => handleModelFile(e.target.files?.[0])}
+            />
+            <Button type="button" variant="secondary" disabled={modelUploading} onClick={() => modelInput.current?.click()}>
+              {modelUploading ? `Uploading… ${modelProgress}%` : 'Upload .splat / .glb'}
+            </Button>
+            {form.model.url && (
+              <button type="button" onClick={() => setForm((f) => ({ ...f, model: EMPTY_MODEL }))} className="text-sm text-stone-600 hover:text-error">
+                Remove model
+              </button>
+            )}
+          </div>
+          {modelError && <p className="text-sm text-error">{modelError}</p>}
+          <Input label="…or paste a link to the file (https://…)" value={form.model.url} onChange={(e) => setModel({ url: e.target.value })} />
+
+          {form.model.url && (
+            <>
+              <Select label="File type" value={form.model.format} onChange={(e) => setModel({ format: e.target.value })}>
+                <option value="splat">Gaussian splat (.splat)</option>
+                <option value="glb">3D mesh (.glb)</option>
+              </Select>
+              <Suspense fallback={<Spinner />}>
+                <ModelPreview model={form.model} />
+              </Suspense>
+              <p className="-mt-2 text-xs text-stone-600">Drag the preview to look around. Adjust until the piece stands upright on the plinth.</p>
+              {[
+                ['Size — metres tall', 'height', 0.2, 3, 0.05, form.model.height],
+                ['Raise / lower — metres', 'offsetY', -1, 1.5, 0.01, form.model.offsetY],
+              ].map(([label, key, min, max, step, value]) => (
+                <label key={key} className="block text-sm text-stone-600">
+                  {label}: <span className="text-ink">{Number(value).toFixed(2)}</span>
+                  <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => setModel({ [key]: Number(e.target.value) })} className="mt-1 block w-full accent-[var(--color-accent)]" />
+                </label>
+              ))}
+              {['Tilt forward / back (X)', 'Turn (Y)', 'Lean sideways (Z)'].map((label, axis) => (
+                <label key={label} className="block text-sm text-stone-600">
+                  {label}: <span className="text-ink">{form.model.rotation[axis]}°</span>
+                  <input type="range" min={-180} max={180} step={1} value={form.model.rotation[axis]} onChange={(e) => setRotation(axis, e.target.value)} className="mt-1 block w-full accent-[var(--color-accent)]" />
+                </label>
+              ))}
+            </>
+          )}
+        </fieldset>
 
         <Input label="Sort Order" type="number" value={form.sortOrder} onChange={(e) => set('sortOrder', e.target.value)} />
 

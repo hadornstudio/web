@@ -35,3 +35,16 @@ const adMediaUpload = multer({
 });
 
 export const uploadAdMedia = adMediaUpload.single('media');
+
+// 3D model files for the showroom (.splat captures run tens of MB). Admin-only route; the controller sniffs the real
+// bytes, so the filter here only checks the extension.
+const modelUpload = multer({
+  storage,
+  limits: { fileSize: 60 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!/\.(splat|glb)$/i.test(file.originalname)) return cb(new ApiError(400, 'Only .splat or .glb model files are allowed'));
+    cb(null, true);
+  },
+});
+
+export const uploadModel = modelUpload.single('model');
