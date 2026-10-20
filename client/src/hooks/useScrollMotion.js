@@ -7,6 +7,8 @@ import { gsap, prefersReducedMotion } from '../lib/motion/gsapConfig';
 //   [data-drift=N]  element that travels N px up (or down, if negative) over the time the section is on screen,
 //                   so neighbouring columns move at different speeds
 //   [data-zoom]     image that eases from slightly enlarged to normal as it arrives
+//   [data-slide]    block that slides in from the side ("left" | "right", default up) while fading in, tied to scroll
+//   [data-mask]     frame that opens from a small rounded window to its full size as it scrolls into view
 // Everything is transform/opacity only. Reduced-motion visitors get the plain, finished layout.
 // `deps`: re-run when content that mounts late (after a loading spinner) appears.
 export function useScrollMotion(deps = []) {
@@ -50,6 +52,24 @@ export function useScrollMotion(deps = []) {
             stagger: 0.12,
             scrollTrigger: { trigger: el, start: 'top 92%', end: 'top 52%', scrub: 0.6 },
           }
+        );
+      });
+
+      root.querySelectorAll('[data-slide]').forEach((el) => {
+        const side = el.dataset.slide;
+        const from = { opacity: 0, x: side === 'left' ? -90 : side === 'right' ? 90 : 0, y: side ? 24 : 70 };
+        gsap.fromTo(
+          el,
+          from,
+          { opacity: 1, x: 0, y: 0, ease: 'power2.out', scrollTrigger: { trigger: el, start: 'top 94%', end: 'top 62%', scrub: 0.7 } }
+        );
+      });
+
+      root.querySelectorAll('[data-mask]').forEach((el) => {
+        gsap.fromTo(
+          el,
+          { clipPath: 'inset(16% 14% 16% 14% round 28px)' },
+          { clipPath: 'inset(0% 0% 0% 0% round 0px)', ease: 'none', scrollTrigger: { trigger: el, start: 'top 92%', end: 'top 30%', scrub: 0.7 } }
         );
       });
 
