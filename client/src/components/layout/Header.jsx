@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import { HERO_CONFIG } from '../film/heroConfig';
+import { prefersReducedMotion } from '../../lib/motion/gsapConfig';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import MobileNav from './MobileNav';
@@ -15,19 +17,54 @@ const NAV_LINKS = [
   { to: '/custom-order', label: 'Custom' },
 ];
 
+// On phones the home film is full-bleed from the very top of the screen, with the header floating over it
+// (transparent, light logo) for as long as the film is pinned; it turns into the normal paper bar afterwards.
+function useOverHero() {
+  const { pathname } = useLocation();
+  const [over, setOver] = useState(false);
+  useEffect(() => {
+    if (pathname !== '/') {
+      setOver(false);
+      return undefined;
+    }
+    const phone = window.matchMedia('(max-width: 767px)');
+    const stillHero = prefersReducedMotion() || navigator.connection?.saveData;
+    const update = () => {
+      const screens = stillHero ? 1 : HERO_CONFIG.scrollScreens.mobile;
+      setOver(phone.matches && window.scrollY < window.innerHeight * screens - 120);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [pathname]);
+  return { over, home: pathname === '/' };
+}
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { over, home } = useOverHero();
+  const tone = over ? 'text-ivory' : 'text-ink';
   const itemCount = useCartStore((s) => s.getItemCount());
   const openDrawer = useCartStore((s) => s.openDrawer);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-stone-300 bg-paper/95">
+    <header
+      className={`sticky top-0 z-40 border-b transition-colors duration-300 ${home ? 'max-md:fixed max-md:inset-x-0' : ''} ${
+        over ? 'border-transparent bg-gradient-to-b from-night/70 to-transparent' : 'border-stone-300 bg-paper/95'
+      }`}
+    >
       <div className="container-page flex h-20 items-center justify-between">
         <button
           type="button"
-          className="text-ink xl:hidden"
+          data-menu-button
+          className={`${tone} transition-colors duration-300 xl:hidden`}
           onClick={() => setMobileOpen(true)}
+          aria-expanded={mobileOpen}
           aria-label="Open menu"
         >
           <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
@@ -35,7 +72,7 @@ export default function Header() {
           </svg>
         </button>
 
-        <Link to="/" aria-label="Hadorn Studio — home" className="flex items-center gap-3 text-ink">
+        <Link to="/" aria-label="Hadorn Studio — home" className={`flex items-center gap-3 transition-colors duration-300 ${tone}`}>
           <BrandSvg name="mark" className="w-8 lg:w-10" />
           <BrandSvg name="wordmark" className="w-20 lg:w-28" />
         </Link>
@@ -66,7 +103,7 @@ export default function Header() {
           <button
             type="button"
             onClick={openDrawer}
-            className="relative text-ink hover:text-accent"
+            className={`relative transition-colors duration-300 hover:text-accent ${tone}`}
             aria-label="Open cart"
           >
             <svg width="20" height="22" viewBox="0 0 20 22" fill="none">
@@ -85,7 +122,12 @@ export default function Header() {
         </div>
       </div>
 
-      <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} links={NAV_LINKS} />
+      <MobileNav
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        links={NAV_LINKS}
+        account={{ to: isAuthenticated ? '/account' : '/login', label: isAuthenticated ? 'Account' : 'Login' }}
+      />
     </header>
   );
 }

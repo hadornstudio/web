@@ -45,6 +45,13 @@
   }
 }
 
+/* Home film height. Phones: the whole screen, measured against the LARGEST viewport (lvh) so there is never a strip
+   below it when the browser toolbar slides away. Larger screens: the screen minus the 80px sticky header. */
+.hero-fill { height: 100vh; height: 100lvh; }
+@media (min-width: 768px) {
+  .hero-fill { height: calc(100vh - 80px); height: calc(100svh - 80px); }
+}
+
 /* Lenis (home page only) takes over scrolling, so the global smooth-scroll must step aside. */
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }

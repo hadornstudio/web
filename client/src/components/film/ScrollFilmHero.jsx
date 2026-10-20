@@ -9,7 +9,6 @@ import { mapProgress, smoothstep } from './filmMath';
 import { frameUrl, useFrameSequence } from './useFrameSequence';
 import TagLayer from './TagLayer';
 
-const HERO_HEIGHT = `calc(100svh - ${C.headerOffset}px)`;
 const FILM_BUTTON =
   'inline-flex items-center justify-center border border-ivory/80 bg-night/45 px-7 py-3 font-studio text-xs uppercase tracking-[0.25em] text-ivory transition-colors duration-300 hover:bg-ivory hover:text-night';
 const TEXT_SHADOW = '[text-shadow:0_1px_14px_rgba(20,16,12,0.85)]';
@@ -21,7 +20,7 @@ function A11yHeading() {
 function StaticHero({ isMobile }) {
   const set = frameSets.hero[isMobile ? 'mobile' : 'desktop'];
   return (
-    <section className="relative flex min-h-[520px] items-center justify-center overflow-hidden bg-night" style={{ height: HERO_HEIGHT }}>
+    <section className="hero-fill relative flex min-h-[520px] items-center justify-center overflow-hidden bg-night">
       <img src={frameUrl(set, set.frames)} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-night/75 via-night/20 to-night/30" />
       <A11yHeading />
@@ -153,7 +152,7 @@ function FilmHero({ isMobile }) {
 
       ScrollTrigger.create({
         trigger: section,
-        start: `top top+=${C.headerOffset}`,
+        start: `top top+=${isMobile ? 0 : C.headerOffset}`, // phones: full-bleed, the header floats over the film
         end: () => `+=${window.innerHeight * screens}`,
         pin: true,
         refreshPriority: 10, // measured first, so every section below is positioned with this pin's spacer in place
@@ -207,7 +206,7 @@ function FilmHero({ isMobile }) {
   // what React removes on unmount/remount, so React never tries to detach a re-parented node.
   return (
     <div>
-      <section ref={sectionRef} className="relative min-h-[520px] overflow-hidden bg-night" style={{ height: HERO_HEIGHT }}>
+      <section ref={sectionRef} className="hero-fill relative min-h-[520px] overflow-hidden bg-night">
         <img src={frameUrl(set, 1)} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden="true" />
         <TagLayer
@@ -253,12 +252,12 @@ function FilmHero({ isMobile }) {
           </div>
         ))}
 
-        <div ref={finalRef} className="absolute inset-x-0 bottom-12 flex flex-col items-center px-6 text-center font-studio text-ivory">
+        <div ref={finalRef} className="absolute inset-x-0 bottom-12 flex flex-col items-center px-6 text-center font-studio text-ivory max-md:bottom-32">
           <p className={`mb-5 text-sm font-light uppercase tracking-[0.3em] ${TEXT_SHADOW}`}>{C.finalCta.text}</p>
           <Link to={C.finalCta.to} className={FILM_BUTTON}>{C.finalCta.label}</Link>
         </div>
 
-        <div ref={cueRef} className="pointer-events-none absolute inset-x-0 bottom-8 flex flex-col items-center gap-3 font-studio text-ivory">
+        <div ref={cueRef} className="pointer-events-none absolute inset-x-0 bottom-8 flex flex-col items-center gap-3 font-studio text-ivory max-md:bottom-28">
           <span className="text-[11px] font-light uppercase tracking-[0.35em]">{C.brand.scrollCue}</span>
           <span className="h-10 w-px animate-pulse bg-ivory/70" />
         </div>
