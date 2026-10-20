@@ -1,9 +1,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { readFileSync } from 'node:fs'
+
+// The first-load splash lives in index.html so it paints before any JavaScript runs; it needs the brand
+// SVGs inline, so they are injected from the same files the app uses (stripped of their own title/label).
+const brandSplash = () => ({
+  name: 'brand-splash',
+  transformIndexHtml(html) {
+    const svg = (file) =>
+      readFileSync(new URL(`./src/assets/brand/${file}`, import.meta.url), 'utf8')
+        .replace(/<title>[\s\S]*?<\/title>/, '')
+        .replace(/\s(role|aria-label)="[^"]*"/g, '');
+    return html.replace('<!--splash-mark-->', svg('hadorn-mark.svg')).replace('<!--splash-word-->', svg('hadorn-wordmark.svg'));
+  },
+})
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), brandSplash()],
   server: {
     port: 5173,
   },

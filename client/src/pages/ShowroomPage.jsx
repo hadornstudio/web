@@ -5,7 +5,7 @@ import { useGalleryItems } from '../hooks/useGallery';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { webglAvailable } from '../utils/webgl';
-import Spinner from '../components/common/Spinner';
+import LoadingScreen from '../components/common/LoadingScreen';
 import TitleCard from '../components/showroom/TitleCard';
 import LightsOnFilm from '../components/showroom/LightsOnFilm';
 import GalleryExperience from '../components/showroom/GalleryExperience';
@@ -82,7 +82,7 @@ export default function ShowroomPage() {
   const [hasWebgl] = useState(webglAvailable);
   const [enter3D, setEnter3D] = useState(false);
 
-  if (isLoading) return <div className="fixed inset-0 bg-night"><Spinner className="py-40" /></div>;
+  if (isLoading) return <LoadingScreen fullscreen />;
 
   if (works.length === 0) {
     return (

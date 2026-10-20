@@ -1,7 +1,11 @@
+import BrandSvg from '../brand/BrandSvg';
+
+// Small inline loading state (lists, buttons' neighbours, admin tables): the same animated Hadorn mark as the
+// full loading screen, without the wordmark. Page-level waits use <LoadingScreen /> instead.
 export default function Spinner({ className = '' }) {
   return (
-    <div className={`flex items-center justify-center py-12 ${className}`}>
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-stone-300 border-t-accent" />
+    <div role="status" aria-label="Loading" className={`loader-compact flex items-center justify-center py-12 ${className}`}>
+      <BrandSvg name="mark" className="loader-mark" />
     </div>
   );
 }

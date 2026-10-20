@@ -9,6 +9,7 @@ import FilterSheet from '../components/product/FilterSheet';
 import ActiveFilters from '../components/product/ActiveFilters';
 import Select from '../components/common/Select';
 import Spinner from '../components/common/Spinner';
+import LoadingScreen from '../components/common/LoadingScreen';
 import AdSlot from '../components/common/AdSlot';
 import { SORT_OPTIONS } from '../config/constants';
 
@@ -168,7 +169,7 @@ export default function CatalogPage() {
 
         <div className="min-w-0 flex-1">
           {query.isLoading ? (
-            <Spinner />
+            <LoadingScreen className="min-h-[50vh]" />
           ) : (
             <>
               {total != null && (

@@ -4,6 +4,7 @@ import Layout from './components/layout/Layout';
 import ProtectedRoute from './routes/ProtectedRoute';
 import AdminRoute from './routes/AdminRoute';
 import ScrollToTop from './components/common/ScrollToTop';
+import LoadingScreen from './components/common/LoadingScreen';
 import PageTransitionOverlay from './components/common/PageTransitionOverlay';
 
 import HomePage from './pages/HomePage';
@@ -54,7 +55,7 @@ export default function App() {
         <Route
           path="showroom"
           element={
-            <Suspense fallback={<div className="fixed inset-0 bg-night" />}>
+            <Suspense fallback={<LoadingScreen fullscreen />}>
               <ShowroomPage />
             </Suspense>
           }
@@ -84,7 +85,7 @@ export default function App() {
           <Route
             path="admin"
             element={
-              <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+              <Suspense fallback={<LoadingScreen fullscreen />}>
                 <AdminLayout />
               </Suspense>
             }

@@ -156,6 +156,7 @@ function FilmHero({ isMobile }) {
         start: `top top+=${C.headerOffset}`,
         end: () => `+=${window.innerHeight * screens}`,
         pin: true,
+        refreshPriority: 10, // measured first, so every section below is positioned with this pin's spacer in place
         anticipatePin: 1,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
@@ -165,6 +166,10 @@ function FilmHero({ isMobile }) {
           tagsRef.current?.update(progress);
         },
       });
+
+      // Sections below were set up (in layout effects) before this pin existed, so their scroll positions
+      // ignore the pin's extra scroll distance. Recalculate everything now that the page has its final shape.
+      requestAnimationFrame(() => ScrollTrigger.refresh());
 
       let focused = -1;
       let direction = 1;

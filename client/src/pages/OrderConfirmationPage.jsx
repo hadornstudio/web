@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useMyOrder } from '../hooks/useOrders';
 import { formatCurrency } from '../utils/formatCurrency';
-import Spinner from '../components/common/Spinner';
+import LoadingScreen from '../components/common/LoadingScreen';
 import Button from '../components/common/Button';
 
 export default function OrderConfirmationPage() {
@@ -9,7 +9,7 @@ export default function OrderConfirmationPage() {
   const { data, isLoading } = useMyOrder(orderId);
   const order = data?.data?.order;
 
-  if (isLoading) return <Spinner className="py-32" />;
+  if (isLoading) return <LoadingScreen />;
   if (!order) return <div className="container-page py-32 text-center">Order not found.</div>;
 
   return (

@@ -22,7 +22,7 @@ import StarRating from '../components/common/StarRating';
 import Button from '../components/common/Button';
 import WishlistHeartButton from '../components/common/WishlistHeartButton';
 import LocalShippingEstimate from '../components/product/LocalShippingEstimate';
-import Spinner from '../components/common/Spinner';
+import LoadingScreen from '../components/common/LoadingScreen';
 import ProductCarousel from '../components/product/ProductCarousel';
 import ReviewList from '../components/reviews/ReviewList';
 import ReviewForm from '../components/reviews/ReviewForm';
@@ -70,7 +70,7 @@ export default function ProductDetailPage() {
     }
   }, [product?._id]);
 
-  if (isLoading) return <Spinner className="min-h-[100vh] items-start pt-32" />;
+  if (isLoading) return <LoadingScreen className="min-h-[100vh] !items-start pt-32" />;
   if (!product) return <div className="container-page py-32 text-center">Product not found.</div>;
 
   const selectedVariant = product.variants?.find((v) => v._id === variantId);

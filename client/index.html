@@ -7,6 +7,7 @@
     <title>Hadorn Studio — Handcrafted Beading & Jewelry</title>
     <meta name="description" content="Hadorn Studio makes handcrafted beadwork, attire and accessories — necklaces, bracelets, earrings and anklets, made by hand. Customise your own piece in 3D." />
     <meta name="theme-color" content="#14100c" />
+    <style>html{background:#FAF7F2}#splash{position:fixed;inset:0;z-index:2000;background:#FAF7F2}</style>
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Hadorn Studio" />
     <meta property="og:title" content="Hadorn Studio — Handcrafted Beading & Jewelry" />
@@ -31,6 +32,15 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- First-load screen: same loader the app uses everywhere (src/components/common/LoadingScreen.jsx). Removed by src/lib/splash.js. -->
+    <div id="splash" class="loader-screen loader-splash" role="status" aria-label="Loading Hadorn Studio">
+      <div class="loader-stack">
+        <span class="loader-mark brand-svg" aria-hidden="true"><!--splash-mark--></span>
+        <span class="loader-word brand-svg" aria-hidden="true"><!--splash-word--></span>
+        <span class="loader-bar" aria-hidden="true"><i></i></span>
+      </div>
+    </div>
+    <noscript><style>#splash{display:none}</style></noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

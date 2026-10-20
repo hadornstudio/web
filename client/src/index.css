@@ -101,3 +101,41 @@ html.lenis, html.lenis body { height: auto; }
     }
   }
 }
+
+/* ---- Loader: one look for the first-load splash, every page-level wait and the small inline spinner ---- */
+.loader-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+.loader-fixed { position: fixed; inset: 0; z-index: 60; }
+.loader-splash { transition: opacity 600ms ease, visibility 0s linear 600ms; }
+.loader-splash.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.loader-stack { display: flex; flex-direction: column; align-items: center; gap: 1.1rem; }
+.loader-mark { display: block; width: 4.25rem; }
+.loader-word { display: block; width: 8.5rem; opacity: 0.9; }
+.loader-bar { position: relative; display: block; width: 7rem; height: 2px; overflow: hidden; background: var(--color-stone-300); }
+.loader-bar > i { position: absolute; inset: 0 auto 0 0; width: 40%; background: var(--color-accent); animation: loader-bar 1.3s ease-in-out infinite; }
+.loader-compact .loader-mark { width: 2.5rem; }
+
+/* The four pieces of the mark drift apart and come together, like beads being strung. */
+.loader-mark path { transform-box: fill-box; transform-origin: center; animation: loader-piece 1.7s ease-in-out infinite; }
+.loader-mark #mark-left { --dx: -150px; --dy: 40px; --rot: -14deg; }
+.loader-mark #mark-top-right { --dx: 140px; --dy: -120px; --rot: 16deg; animation-delay: 0.12s; }
+.loader-mark #mark-bottom { --dx: -40px; --dy: 150px; --rot: 10deg; animation-delay: 0.24s; }
+.loader-mark #mark-main { --dx: 0px; --dy: 70px; --rot: -4deg; animation-delay: 0.36s; }
+
+@keyframes loader-piece {
+  0%, 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0.25; }
+  45%, 60% { transform: translate(0, 0) rotate(0); opacity: 1; }
+}
+@keyframes loader-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader-mark path { animation: none; }
+  .loader-bar > i { animation: none; width: 100%; opacity: 0.5; }
+}
