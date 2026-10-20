@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import BrandSvg from '../brand/BrandSvg';
 
-export default function Footer() {
+export default function Footer({ flush = false }) {
   return (
-    <footer className="mt-32 border-t border-stone-300 bg-cream">
+    <footer className={`${flush ? '' : 'mt-32'} border-t border-stone-300 bg-cream`}>
       <div className="container-page grid grid-cols-1 gap-12 py-16 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2.5 text-ink" role="img" aria-label="Hadorn Studio">
