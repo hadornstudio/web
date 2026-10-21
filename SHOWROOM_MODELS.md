@@ -34,6 +34,20 @@ Or use a capture app instead:
 Use any Gaussian-splat capture tool and export a **.ply** (or a **.splat**). Examples: Luma, Polycam, KIRI Engine (upload
 the video in the app), or Brush / OpenSplat on a Mac (run locally, slower but private).
 
+### No orbit video? Build it from a few studio photos
+
+A handful of clean studio photos (one front, one back, one side, all full-length on a plain backdrop, same distance, plus
+optional close-ups) can become a **solid 3D gown** instead of a scan. This is *sculpted from photos*, not photogrammetry: the
+body is shaped from the three outlines and the photos are wrapped onto it, so it is accurate from the photographed angles
+and a smooth estimate in between; the beads are painted on, not real relief. Pipeline (all local, in
+`scripts/dress-from-photos/`):
+
+1. Cut the gown out of each photo (macOS Vision): `scripts/dress-from-photos/mask.swift` (`swiftc -O mask.swift -o mask; ./mask photo.jpg mask.png`).
+2. Optional detail: `align-closeup.mjs` / `refine-closeup.mjs` find where a zoomed close-up sits on the front photo.
+3. `node scripts/dress-from-photos/build-dress.mjs photos-dir masks-dir out.glb` builds the GLB (front = `p6`, back = `p2`, side = `p4`
+   facing image-left, close-up `p1`; edit the constants at the top for other photos).
+4. Upload the `.glb` in the admin (File type: 3D mesh). It is lit by the photos themselves (unlit material), so it stays white.
+
 ## 3. Convert and clean it
 
 ```bash

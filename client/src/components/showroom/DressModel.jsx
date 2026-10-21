@@ -38,6 +38,8 @@ function GlbPiece({ url, height }) {
   // Fit to `height` metres, centred on its footprint and standing on y = 0. Cloned so one file can be shown twice.
   const { object, scale } = useMemo(() => {
     const clone = scene.clone(true);
+    // Unlit (baked-lighting) materials already carry the photographed light: no tone mapping on top of it.
+    clone.traverse((o) => o.isMesh && o.material?.isMeshBasicMaterial && (o.material.toneMapped = false));
     const box = new THREE.Box3().setFromObject(clone);
     const size = box.getSize(new THREE.Vector3());
     const k = height / Math.max(1e-6, size.y);
