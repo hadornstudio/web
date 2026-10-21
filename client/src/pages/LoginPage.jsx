@@ -7,7 +7,7 @@ import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import GoogleSignInButton from '../components/common/GoogleSignInButton';
 
-const LOGIN_IMAGE = 'https://images.unsplash.com/photo-1611170947204-5ab96c3e37a1?q=80&w=1200&auto=format&fit=crop';
+const LOGIN_FILM = { video: '/video/orbit.mp4', poster: '/video/orbit.jpg', loop: true, caption: { label: 'Welcome back', line: 'Every piece, made by hand.' } };
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -34,7 +34,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthSplitLayout image={LOGIN_IMAGE} imageSide="left">
+    <AuthSplitLayout {...LOGIN_FILM} imageSide="left">
       <div ref={contentRef}>
         <h1 className="font-display text-3xl">Welcome Back</h1>
         <p className="mt-2 text-sm text-stone-600">Sign in to view your orders, wishlist, and saved addresses.</p>

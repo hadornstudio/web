@@ -1,11 +1,10 @@
 import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
-import { useParallax } from '../../hooks/useParallax';
+import BrandVideo from './BrandVideo';
 import { gsap, EASE, DURATION, prefersReducedMotion } from '../../lib/motion/gsapConfig';
 
-export default function AuthSplitLayout({ image, imageSide = 'left', children }) {
+export default function AuthSplitLayout({ video, poster, loop = false, caption, imageSide = 'left', children }) {
   const revealRef = useRef(null);
-  const imageRef = useParallax({ amount: 40 });
 
   useGSAP(
     () => {
@@ -27,14 +26,17 @@ export default function AuthSplitLayout({ image, imageSide = 'left', children })
     <div className="grid min-h-[calc(100vh-81px)] grid-cols-1 md:grid-cols-2">
       <div
         ref={revealRef}
-        className={`relative h-56 overflow-hidden bg-cream md:h-auto ${imageSide === 'right' ? 'md:order-2' : ''}`}
+        className={`relative h-56 overflow-hidden bg-night md:h-auto ${imageSide === 'right' ? 'md:order-2' : ''}`}
       >
-        <img
-          ref={imageRef}
-          src={image}
-          alt=""
-          className="absolute -top-[12%] left-0 h-[124%] w-full object-cover"
-        />
+        <BrandVideo src={video} poster={poster} loop={loop} delay={400}>
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-night/70 via-transparent to-night/10" />
+          {caption && (
+            <div className="absolute bottom-6 left-6 right-6 text-ivory md:bottom-10 md:left-10">
+              <p className="font-studio text-[11px] uppercase tracking-[0.3em] text-gold">{caption.label}</p>
+              <p className="mt-2 font-display text-xl md:text-3xl">{caption.line}</p>
+            </div>
+          )}
+        </BrandVideo>
       </div>
 
       <div className="flex items-center justify-center px-6 py-16 md:px-16">

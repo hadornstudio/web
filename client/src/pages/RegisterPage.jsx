@@ -7,7 +7,7 @@ import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import GoogleSignInButton from '../components/common/GoogleSignInButton';
 
-const REGISTER_IMAGE = 'https://images.unsplash.com/photo-1659032882718-3e54e7da86ab?q=80&w=1200&auto=format&fit=crop';
+const REGISTER_FILM = { video: '/video/beads-fall.mp4', poster: '/video/beads-fall.jpg', caption: { label: 'Join Hadorn', line: 'Start your collection.' } };
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
@@ -33,7 +33,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <AuthSplitLayout image={REGISTER_IMAGE} imageSide="right">
+    <AuthSplitLayout {...REGISTER_FILM} imageSide="right">
       <div ref={contentRef}>
         <h1 className="font-display text-3xl">Create an Account</h1>
         <p className="mt-2 text-sm text-stone-600">Save your addresses, track orders, and build a wishlist.</p>

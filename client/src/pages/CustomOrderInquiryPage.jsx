@@ -1,58 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { inquiriesApi } from '../api/inquiries';
 import { useAuthStore } from '../store/useAuthStore';
-import { gsap, DURATION, EASE, prefersReducedMotion } from '../lib/motion/gsapConfig';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import ImageUploadField from '../components/admin/ImageUploadField';
+import BrandVideo from '../components/common/BrandVideo';
 
 const EMPTY_FORM = { name: '', email: '', phone: '', description: '', budgetRange: '', referenceImages: [] };
 
-const SLIDESHOW_IMAGES = [
-  'https://images.unsplash.com/photo-1715374033196-0ff662284a7e?q=80&w=1400&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1522065893269-6fd20f6d7438?q=80&w=1400&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1611107683227-e9060eccd846?q=80&w=1400&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1626252685643-8a305c55e98d?q=80&w=1400&auto=format&fit=crop',
-];
-
-function Slideshow() {
-  const [index, setIndex] = useState(0);
-  const imgRefs = useRef([]);
-
-  useEffect(() => {
-    const id = setInterval(() => setIndex((i) => (i + 1) % SLIDESHOW_IMAGES.length), 4000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const current = imgRefs.current[index];
-    if (!current) return;
-    if (prefersReducedMotion()) {
-      gsap.set(current, { autoAlpha: 1 });
-      return;
-    }
-    gsap.fromTo(current, { autoAlpha: 0 }, { autoAlpha: 1, duration: DURATION.slow, ease: EASE.reveal });
-  }, [index]);
-
+// The film of the Hadorn mark gathering itself out of loose beads — the whole idea of a made-to-order piece.
+function Film() {
   return (
-    <div className="relative h-full w-full overflow-hidden bg-cream">
-      {SLIDESHOW_IMAGES.map((src, i) => (
-        <img
-          key={src}
-          ref={(el) => (imgRefs.current[i] = el)}
-          src={src}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ opacity: i === 0 ? 1 : 0, visibility: i === 0 ? 'visible' : 'hidden' }}
-        />
-      ))}
-      <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent" />
-      <div className="absolute bottom-8 left-8 right-8 text-paper">
-        <p className="text-xs uppercase tracking-[0.2em]">Bespoke</p>
+    <BrandVideo src="/video/logo-beads.mp4" poster="/video/logo-beads.jpg" delay={300}>
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-night/70 via-transparent to-transparent" />
+      <div className="absolute bottom-8 left-8 right-8 text-ivory">
+        <p className="font-studio text-[11px] uppercase tracking-[0.3em] text-gold">Bespoke</p>
         <p className="mt-2 font-display text-2xl">Made to your exact vision.</p>
       </div>
-    </div>
+    </BrandVideo>
   );
 }
 
@@ -100,7 +66,7 @@ export default function CustomOrderInquiryPage() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2">
       <div className="h-64 md:h-auto md:min-h-screen">
-        <Slideshow />
+        <Film />
       </div>
 
       <div className="container-page flex items-center py-16 md:px-16">
