@@ -16,7 +16,6 @@ const FLOOR_H = 0.115; // the lowest ~12% of the photo is the train/hem lying on
 const FLOOR_Y = 0.025; // real height (m) the floor part is squashed into
 const EXPOSURE = 1.16, GAMMA = 0.9; // the studio shots render the white gown at ~190/255; lift it so it reads as white
 const BAND_PX = 54; // sleeve thickness in the front/back photos (px)
-const SLEEVE_FRAC = [0.075, 0.43]; // where the sleeve tubes are drawn
 const SLEEVE_ZONE = [0.075, 0.47]; // rows of the photos in which sleeves/tassels overlap the torso outline and must be subtracted // sleeve spans this fraction of the height, measured from the top
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -49,12 +48,19 @@ const [fp, bp, sp] = await Promise.all([loadPhoto(`${photoDir}/p6.jpg`), loadPho
 const CLOSEUP = { file: 'p1.jpg', ox: 393, oy: 190, s: 3.24 };
 const cp = await loadPhoto(`${photoDir}/${CLOSEUP.file}`);
 const mpp = HEIGHT_M / (fm.bottom - fm.top); // metres per photo pixel (all three photos share a scale within ~2%)
+const bandM = BAND_PX * mpp; // sleeve thickness seen from the front (m)
 
 // photo row for height fraction h (0 = floor, 1 = top of the mannequin cap)
 const rowOf = (m, h) => m.bottom - h * (m.bottom - m.top);
 const rowFromTop = (h) => 1 - h;
-// real-world height (m) for a photo height fraction h
-const yOf = (h) => (h < FLOOR_H ? FLOOR_Y * (h / FLOOR_H) : FLOOR_Y + (h - FLOOR_H) * (HEIGHT_M - FLOOR_Y) / (1 - FLOOR_H));
+// real-world height (m) for a photo height fraction h. The lowest part of the photo is the train lying on the floor, seen
+// at a slant, so it gets little real height; the slope eases from "flat" to "normal" instead of changing abruptly.
+const Y_TABLE = (() => {
+  const n = 2000, t = [0];
+  for (let i = 1; i <= n; i++) { const h = i / n, slope = lerp(FLOOR_Y / FLOOR_H, 2, smooth(FLOOR_H * 0.4, FLOOR_H * 2.4, h)); t.push(t[i - 1] + slope / n); }
+  return t.map((v) => (v / t[n]) * HEIGHT_M);
+})();
+const yOf = (h) => { const f = clamp(h, 0, 1) * 2000, i = Math.min(1999, Math.floor(f)); return lerp(Y_TABLE[i], Y_TABLE[i + 1], f - i); };
 
 // vertical axis of each photo = centre of the neck
 function neckCentre(m) {
@@ -98,6 +104,28 @@ const zB = zBraw.map((zb, i) => {
   const needBack = zF[i] - 2 * 0.8 * halfW[i];
   return lerp(zb, Math.min(zb, needBack), floorW);
 });
+// The sleeves hang over the hips in the photos, which makes the measured hip outline bumpy (it showed up as a ledge
+// above the knee). Replace that band with a smooth curve between the clean rows above and below it.
+function repair(arr, ftFrom, ftTo) {
+  const idx = H.map((_, i) => i).filter((i) => 1 - H[i] >= ftFrom && 1 - H[i] <= ftTo);
+  if (idx.length < 4) return arr;
+  const i0 = idx[0] - 1, i1 = idx[idx.length - 1] + 1, span = i1 - i0, k = 10;
+  const m0 = (arr[i0] - arr[i0 - k]) / k, m1 = (arr[i1 + k] - arr[i1]) / k; // slopes just outside the band (per row)
+  const out = arr.slice();
+  for (const i of idx) {
+    const t = (i - i0) / span, t2 = t * t, t3 = t2 * t;
+    out[i] = (2 * t3 - 3 * t2 + 1) * arr[i0] + (t3 - 2 * t2 + t) * m0 * span + (-2 * t3 + 3 * t2) * arr[i1] + (t3 - t2) * m1 * span;
+  }
+  return out;
+}
+halfW = gauss(repair(halfW, 0.34, 0.49), 3);
+const zFs = gauss(repair(zF, 0.36, 0.50), 3), zBs = gauss(repair(zB, 0.36, 0.50), 3);
+zF.splice(0, zF.length, ...zFs); zB.splice(0, zB.length, ...zBs);
+{ // one more, wider smoothing pass that fades in only across the hips and knees
+  const wide = (arr) => { const g = gauss(arr, 9); return arr.map((v, i) => lerp(v, g[i], smooth(0.36, 0.44, 1 - H[i]) * (1 - smooth(0.54, 0.62, 1 - H[i])))); };
+  halfW = wide(halfW);
+  const f2 = wide(zF), b2 = wide(zB); zF.splice(0, zF.length, ...f2); zB.splice(0, zB.length, ...b2);
+}
 const z0 = zF.map((zf, i) => (zf + zB[i]) / 2);
 const depthHW = zF.map((zf, i) => Math.max(0.02, (zf - zB[i]) / 2));
 halfW = halfW.map((w, i) => Math.max(0.02, w));
@@ -125,26 +153,63 @@ const topC = torsoPos.length / 3;
 torsoPos.push(0, yOf(H[ROWS - 1]), z0[ROWS - 1]); torsoUV.push(0.5, 0.0);
 for (let j = 0; j < SEG; j++) torsoIdx.push(topC, (ROWS - 1) * (SEG + 1) + j + 1, (ROWS - 1) * (SEG + 1) + j);
 
-// ---- sleeves --------------------------------------------------------------------------------------------------------
-const SL_ROWS = 80, SL_SEG = 20, bandM = BAND_PX * mpp;
-const slPos = [], slUV = [], slIdx = [], slInfo = []; // slInfo: per vertex {side, h, phi}
+// ---- sleeves ---------------------------------------------------------------------------------------------------------
+// The sleeve is a sheer tube: ~5 cm thick seen from the front, ~12 cm across seen from the side, narrowing to the cuff,
+// with a fringe of hanging bead strands. Its outline comes from the side photo (hand-traced edges, original pixels).
+const SLEEVE_TRACE = [[270, 528, 645], [395, 523, 651], [553, 528, 625], [653, 534, 618], [770, 528, 608], [870, 523, 598], [906, 523, 594]]; // [photo row, front edge x, back edge x]
+const SLEEVE_TOP_Y = SLEEVE_TRACE[0][0], CUFF_Y = SLEEVE_TRACE[SLEEVE_TRACE.length - 1][0];
+function traceAt(y) {
+  for (let i = 0; i < SLEEVE_TRACE.length - 1; i++) {
+    const [y0, f0, b0] = SLEEVE_TRACE[i], [y1, f1, b1] = SLEEVE_TRACE[i + 1];
+    if (y <= y1) { const t = clamp((y - y0) / (y1 - y0), 0, 1); return { xF: lerp(f0, f1, t), xB: lerp(b0, b1, t) }; }
+  }
+  const l = SLEEVE_TRACE[SLEEVE_TRACE.length - 1]; return { xF: l[1], xB: l[2] };
+}
+const hOfSideRow = (y) => 1 - (y - sm.top) / (sm.bottom - sm.top);
+const SL_ROWS = 90, SL_SEG = 28;
+function sleeveSection(t) { // t: 0 at the shoulder, 1 at the cuff
+  const y = lerp(SLEEVE_TOP_Y, CUFF_Y, t), { xF, xB } = traceAt(y), h = hOfSideRow(y);
+  const hi = clamp(Math.round(h * (ROWS - 1)), 0, ROWS - 1);
+  return { y, h, rz: ((xB - xF) / 2) * mpp, zc: (sAxis - (xF + xB) / 2) * mpp, rx: bandM / 2 * lerp(1, 0.85, t), outer: outerHW[hi] };
+}
+const slPos = [], slUV = [], slIdx = [];
 for (const side of [-1, 1]) {
   const base = slPos.length / 3;
   for (let i = 0; i < SL_ROWS; i++) {
-    const ft = lerp(SLEEVE_FRAC[0], SLEEVE_FRAC[1], i / (SL_ROWS - 1)), h = 1 - ft;
-    const hi = clamp(Math.round(h * (ROWS - 1)), 0, ROWS - 1);
-    const cx = side * (outerHW[hi] - bandM / 2);
-    const taper = i > SL_ROWS * 0.6 ? lerp(1, 0.0, smooth(0, 1, (i - SL_ROWS * 0.6) / (SL_ROWS * 0.4))) : 1;
+    const sec = sleeveSection(i / (SL_ROWS - 1));
     for (let j = 0; j <= SL_SEG; j++) {
-      const phi = (j / SL_SEG) * Math.PI * 2;
-      slPos.push(cx + (bandM / 2) * taper * Math.sin(phi), yOf(h), z0[hi] + bandM * 0.62 * taper * Math.cos(phi));
-      slUV.push((side < 0 ? 0 : 0.5) + (j / SL_SEG) * 0.5, 1 - i / (SL_ROWS - 1));
-      slInfo.push({ side, h, phi, cx });
+      const phi = (j / SL_SEG) * Math.PI * 2; // 0 = outer face centre, +pi/2 = front edge
+      slPos.push(side * (sec.outer - sec.rx + sec.rx * Math.cos(phi)), yOf(sec.h), sec.zc + sec.rz * Math.sin(phi));
+      slUV.push(j / SL_SEG, i / (SL_ROWS - 1));
     }
   }
   for (let i = 0; i < SL_ROWS - 1; i++) for (let j = 0; j < SL_SEG; j++) {
-    const a = base + i * (SL_SEG + 1) + j, b = a + 1, c = a + SL_SEG + 1, d = c + 1;
-    slIdx.push(a, c, b, b, c, d);
+    const a2 = base + i * (SL_SEG + 1) + j, b2 = a2 + 1, c2 = a2 + SL_SEG + 1, d2 = c2 + 1;
+    slIdx.push(a2, c2, b2, b2, c2, d2);
+  }
+  // cuff cap (the fringe hangs from it) and shoulder cap (hidden inside the shoulder)
+  for (const [row, up] of [[SL_ROWS - 1, true], [0, false]]) {
+    const sec = sleeveSection(row / (SL_ROWS - 1)), centre = slPos.length / 3;
+    slPos.push(side * (sec.outer - sec.rx), yOf(sec.h), sec.zc); slUV.push(0.5, row / (SL_ROWS - 1));
+    for (let j = 0; j < SL_SEG; j++) { const v0 = base + row * (SL_SEG + 1) + j; slIdx.push(centre, up ? v0 + 1 : v0, up ? v0 : v0 + 1); }
+  }
+}
+
+// Hanging bead strands along the cuff: thin double-sided ribbons textured (with transparency) as a string of pearls.
+const FR_N = 34, frPos = [], frUV = [], frIdx = [];
+let rs = 5; const rnd = () => ((rs = (rs * 16807) % 2147483647) / 2147483647);
+for (const side of [-1, 1]) {
+  const cuff = sleeveSection(1);
+  for (let k = 0; k < FR_N; k++) {
+    const phi = (k / FR_N) * Math.PI * 2;
+    const cx = side * (cuff.outer - cuff.rx + cuff.rx * 0.98 * Math.cos(phi)), cz = cuff.zc + cuff.rz * 0.98 * Math.sin(phi);
+    const len = 0.062 * (0.78 + 0.4 * rnd()), top = yOf(cuff.h) + 0.004, w = 0.0045;
+    // ribbon faces outwards from the tube axis
+    const nx = side * Math.cos(phi), nz = Math.sin(phi), tx = -nz, tz = nx;
+    const base = frPos.length / 3;
+    frPos.push(cx - tx * w, top, cz - tz * w, cx + tx * w, top, cz + tz * w, cx + tx * w + nx * 0.004, top - len, cz + tz * w + nz * 0.004, cx - tx * w + nx * 0.004, top - len, cz - tz * w + nz * 0.004);
+    frUV.push(0, 0, 1, 0, 1, 1, 0, 1);
+    frIdx.push(base, base + 2, base + 1, base, base + 3, base + 2);
   }
 }
 
@@ -198,23 +263,33 @@ for (let j = 0; j < TEX_H; j++) {
     for (let ch = 0; ch < 3; ch++) tex[o + ch] = clamp((F[ch] * gain.f * wf + B[ch] * gain.b * wb + S[ch] * gain.s * ws) / sum, 0, 255);
   }
 }
-const SL_TEX = 1024;
-const slTex = Buffer.alloc(SL_TEX * SL_TEX * 3);
-for (let j = 0; j < SL_TEX; j++) for (let k = 0; k < SL_TEX; k++) {
-  const side = k < SL_TEX / 2 ? -1 : 1, u = (k % (SL_TEX / 2)) / (SL_TEX / 2), phi = u * Math.PI * 2, v = j / SL_TEX;
-  const ft = lerp(SLEEVE_FRAC[0], SLEEVE_FRAC[1], v), h = 1 - ft, hi = clamp(Math.round(h * (ROWS - 1)), 0, ROWS - 1);
-  const cxPx = side * (outerHW[hi] - bandM / 2) / mpp;
-  const sinP = Math.sin(phi), cosP = Math.cos(phi);
-  const fxp = fAxis + cxPx + (BAND_PX / 2) * sinP, bxp = bAxis - cxPx - (BAND_PX / 2) * sinP;
-  const F = sample(fp, fxp, rowOf(fm, h)), B = sample(bp, bxp, rowOf(bm, h));
-  const wf = smooth(-0.2, 0.4, cosP), wb = 1 - wf, o = (j * SL_TEX + k) * 3;
-  for (let ch = 0; ch < 3; ch++) slTex[o + ch] = clamp(F[ch] * gain.f * wf + B[ch] * gain.b * wb, 0, 255);
+const SL_W = 512, SL_H = 1536;
+const slTex = Buffer.alloc(SL_W * SL_H * 3);
+for (let j = 0; j < SL_H; j++) {
+  const t = (j + 0.5) / SL_H, y = lerp(SLEEVE_TOP_Y, CUFF_Y, t), { xF, xB } = traceAt(y);
+  for (let k = 0; k < SL_W; k++) {
+    const phi = ((k + 0.5) / SL_W) * Math.PI * 2, sinP = Math.sin(phi);
+    // the side photo shows the sleeve's wide face; front edge = image-left; the far half repeats the same sheer pattern
+    const x = lerp(xF + 2, xB - 2, (1 - sinP) / 2);
+    const C = sample(sp, x, y), o = (j * SL_W + k) * 3;
+    for (let ch = 0; ch < 3; ch++) slTex[o + ch] = clamp(C[ch] * gain.s, 0, 255);
+  }
+}
+// bead-strand texture (RGBA): a thread with pearls, transparent elsewhere
+const ST_W = 32, ST_H = 256, strand = Buffer.alloc(ST_W * ST_H * 4);
+for (let y = 0; y < ST_H; y++) for (let x = 0; x < ST_W; x++) {
+  const cy = (y % 12) - 6, cx = x - ST_W / 2 + 0.5, d = Math.hypot(cx, cy), o = (y * ST_W + x) * 4;
+  let a = 0, v = 0;
+  if (d < 5.2) { a = 255; v = 244 - 46 * (d / 5.2) ** 2 + 18 * Math.max(0, 1 - Math.hypot(cx + 1.6, cy + 1.8) / 2.6); }
+  else if (Math.abs(cx) < 1) { a = 255; v = 214; }
+  strand[o] = strand[o + 1] = clamp(v, 0, 255); strand[o + 2] = clamp(v - 6, 0, 255); strand[o + 3] = a;
 }
 const expose = (v) => 255 * Math.pow(clamp((v * EXPOSURE) / 255, 0, 1), GAMMA);
 for (let i = 0; i < tex.length; i++) tex[i] = expose(tex[i]);
 for (let i = 0; i < slTex.length; i++) slTex[i] = expose(slTex[i]);
+const strandPng = await sharp(strand, { raw: { width: ST_W, height: ST_H, channels: 4 } }).png().toBuffer();
 const toJpeg = (buf, w, h) => sharp(buf, { raw: { width: w, height: h, channels: 3 } }).sharpen({ sigma: 0.9, m1: 0.8, m2: 1.6 }).jpeg({ quality: 90, mozjpeg: true }).toBuffer();
-const [torsoJpg, sleeveJpg] = await Promise.all([toJpeg(tex, TEX_W, TEX_H), toJpeg(slTex, SL_TEX, SL_TEX)]);
+const [torsoJpg, sleeveJpg] = await Promise.all([toJpeg(tex, TEX_W, TEX_H), toJpeg(slTex, SL_W, SL_H)]);
 
 // ---- glTF ---------------------------------------------------------------------------------------------------------
 function normals(pos, idx) {
@@ -232,13 +307,14 @@ const doc = new Document();
 const unlitExt = doc.createExtension(KHRMaterialsUnlit);
 const buffer = doc.createBuffer();
 const scene = doc.createScene('dress');
-function addMesh(name, pos, uv, idx, jpg) {
+function addMesh(name, pos, uv, idx, jpg, opts = {}) {
   const P = new Float32Array(pos), U = new Float32Array(uv), I = new Uint32Array(idx);
   // make sure triangles face outwards: the first torso triangle's normal should point away from the axis
   const N = normals(P, I);
-  const tx = doc.createTexture(name + '-tex').setImage(new Uint8Array(jpg)).setMimeType('image/jpeg');
+  const tx = doc.createTexture(name + '-tex').setImage(new Uint8Array(jpg)).setMimeType(opts.png ? 'image/png' : 'image/jpeg');
   const mat = doc.createMaterial(name).setBaseColorTexture(tx).setRoughnessFactor(1).setMetallicFactor(0).setDoubleSided(true);
   mat.setExtension('KHR_materials_unlit', unlitExt.createUnlit());
+  if (opts.png) mat.setAlphaMode('MASK').setAlphaCutoff(0.5);
   const prim = doc.createPrimitive().setMaterial(mat).setIndices(doc.createAccessor().setType('SCALAR').setArray(I).setBuffer(buffer))
     .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(P).setBuffer(buffer))
     .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(N).setBuffer(buffer))
@@ -248,7 +324,8 @@ function addMesh(name, pos, uv, idx, jpg) {
 }
 addMesh('gown', torsoPos, torsoUV, torsoIdx, torsoJpg);
 addMesh('sleeves', slPos, slUV, slIdx, sleeveJpg);
+addMesh('fringe', frPos, frUV, frIdx, strandPng, { png: true });
 await new NodeIO().registerExtensions([KHRMaterialsUnlit]).write(outPath, doc);
-console.log(`wrote ${outPath}  torso ${torsoPos.length / 3} verts, sleeves ${slPos.length / 3}; textures ${(torsoJpg.length / 1048576).toFixed(1)} + ${(sleeveJpg.length / 1048576).toFixed(1)} MB`);
+console.log(`wrote ${outPath}  torso ${torsoPos.length / 3} verts, sleeves ${slPos.length / 3}, fringe strands ${frPos.length / 12}; textures ${(torsoJpg.length / 1048576).toFixed(1)} + ${(sleeveJpg.length / 1048576).toFixed(1)} MB`);
 
 console.log('built; check it in the showroom.');
