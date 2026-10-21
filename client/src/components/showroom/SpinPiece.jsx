@@ -9,7 +9,8 @@ import { useFrameSequence } from '../film/useFrameSequence';
 //   model.url         base path of the frames:  <url>frame_0001.webp ...
 //   model.frames      number of frames in the clip
 //   model.mirrorFrom  if the clip stops short of a full turn, the missing arc is filled by playing the first
-//                     `mirrorFrom` frames backwards, mirrored (the piece is near-symmetrical). -1 = clip is a full turn.
+//                     `mirrorFrom` frames backwards, mirrored (the piece is near-symmetrical). -1 = clip is a full turn:
+//                     the last frames then crossfade into the first ones so the loop has no visible jump.
 //   model.height      height of the piece in metres (the cutout is scaled to this)
 const BLEND = 8; // frames of crossfade where the real and mirrored runs meet
 const smooth01 = (x) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
@@ -18,12 +19,12 @@ const clampI = (v, lo, hi) => Math.min(hi, Math.max(lo, Math.round(v)));
 export default function SpinPiece({ model, inputRef, spin = 0.18, position = [0, 0, 0], cameraDriven = false }) {
   const F = model.frames || 120;
   const MF = model.mirrorFrom >= 0 ? Math.min(model.mirrorFrom, F - 1) : -1;
-  const L = F + (MF >= 0 ? MF + 1 : 0); // frames in one full loop
+  const L = MF >= 0 ? F + MF + 1 : F - 2 * BLEND; // frames in one full loop (a full-turn clip loses the faded-over tail)
   const height = model.height || 1.76;
 
   // two decoders: one follows the real run, one the mirrored run (they can be far apart while crossfading)
-  const baseSet = useMemo(() => ({ base: model.url, frames: F, width: 720, height: 1188, pad: 4, ext: 'webp' }), [model.url, F]);
-  const mirrorSet = useMemo(() => ({ ...baseSet, frames: MF >= 0 ? Math.min(F, MF + BLEND + 8) : 1 }), [baseSet, MF]);
+  const baseSet = useMemo(() => ({ base: model.url, frames: F, width: 720, height: 1188, pad: 4, ext: 'webp' }), [model.url, F]); // width/height are only a size hint for decoding
+  const mirrorSet = useMemo(() => ({ ...baseSet, frames: Math.min(F, (MF >= 0 ? MF : 0) + BLEND + 8) }), [baseSet, MF, F]);
   const realRef = useFrameSequence(baseSet);
   const mirRef = useFrameSequence(mirrorSet);
 
@@ -46,7 +47,14 @@ export default function SpinPiece({ model, inputRef, spin = 0.18, position = [0,
   const layersAt = (p) => {
     const real = (q) => ({ idx: clampI(q, 0, F - 1), flip: false });
     const mir = (q) => ({ idx: clampI(MF - (q - F), 0, F - 1), flip: true });
-    if (MF < 0) return [[real(p), 1]];
+    if (MF < 0) {
+      // full turn: shown as frames 2*BLEND .. F-1; over the last 2*BLEND of those the frames fade into the first 2*BLEND
+      // (second decoder, unflipped), which is exactly where the loop continues from, so there is no jump at the wrap
+      const q = p + 2 * BLEND, start = F - 2 * BLEND;
+      if (q < start) return [[real(q), 1]];
+      const w = smooth01((q - start) / (2 * BLEND));
+      return [[real(q), 1 - w], [{ idx: clampI(q - start, 0, F - 1), flip: false, dec: 'm' }, w]];
+    }
     if (p < BLEND) p += L; // the start of the loop continues past the end of it
     if (p >= L - BLEND) { const rw = smooth01((p - (L - BLEND)) / (2 * BLEND)); return [[mir(p), 1 - rw], [real(p - L), rw]]; }
     if (p > F - BLEND && p < F + BLEND) { const mw = smooth01((p - (F - BLEND)) / (2 * BLEND)); return [[real(p), 1 - mw], [mir(p), mw]]; }
@@ -68,18 +76,21 @@ export default function SpinPiece({ model, inputRef, spin = 0.18, position = [0,
     const dir = Math.sign(p - last.current.p) || 1;
     last.current.p = p;
     const layers = layersAt(p);
-    layers.forEach(([{ idx, flip }]) => (flip ? mirRef : realRef).current?.focus(idx, dir));
+    layers.forEach(([{ idx, flip, dec }]) => (flip || dec === 'm' ? mirRef : realRef).current?.focus(idx, dir));
 
-    const key = layers.map(([{ idx, flip }, w]) => `${idx}${flip ? 'm' : 'r'}${w.toFixed(2)}`).join('|');
+    const key = layers.map(([{ idx, flip, dec }, w]) => `${idx}${flip ? 'f' : dec || 'r'}${w.toFixed(2)}`).join('|');
     if (key === last.current.key) return;
     const ctx = canvas.getContext('2d');
     let drew = false;
     ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.globalCompositeOperation = 'lighter'; // premultiplied add = a true crossfade, no see-through dip
-    for (const [{ idx, flip }, w] of layers) {
-      const bmp = (flip ? mirRef : realRef).current?.nearest(idx);
+    for (const [{ idx, flip, dec }, w] of layers) {
+      const bmp = (flip || dec === 'm' ? mirRef : realRef).current?.nearest(idx);
       if (!bmp || w <= 0.001) continue;
+      if (canvas.width !== bmp.width || canvas.height !== bmp.height) { // frames of different pieces have different shapes; only ever happens before the first upload
+        canvas.width = bmp.width; canvas.height = bmp.height; ctx.globalCompositeOperation = 'lighter';
+      }
       ctx.globalAlpha = layers.length > 1 ? w : 1;
       if (flip) { ctx.save(); ctx.translate(canvas.width, 0); ctx.scale(-1, 1); ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height); ctx.restore(); }
       else ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
@@ -90,16 +101,15 @@ export default function SpinPiece({ model, inputRef, spin = 0.18, position = [0,
     if (drew) {
       last.current.key = key;
       texture.needsUpdate = true;
-      if (mesh.current) { mesh.current.visible = true; mesh.current.scale.x = aspect.current / (720 / 1188); }
+      if (mesh.current) { mesh.current.visible = true; mesh.current.scale.set(height * aspect.current, height, 1); }
     }
   });
 
-  const w = height * (720 / 1188);
   return (
     <group position={position}>
       <group ref={group}>
         <mesh ref={mesh} position={[0, height / 2, 0]} visible={false}>
-          <planeGeometry args={[w, height]} />
+          <planeGeometry args={[1, 1]} />
           <meshBasicMaterial map={texture} transparent alphaTest={0.04} toneMapped={false} side={THREE.DoubleSide} />
         </mesh>
       </group>
