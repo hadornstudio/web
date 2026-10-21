@@ -37,7 +37,7 @@ export default function ModelPreview({ model }) {
           </mesh>
           <gridHelper args={[6, 12, '#4a3a2c', '#2a2018']} position={[0, 0.001, 0]} />
           <Suspense fallback={null}>
-            <DressModel key={`${model.url}|${model.format}`} model={model} spin={0.25} position={[0, 0.16, 0]} />
+            <DressModel key={`${model.url}|${model.format}`} model={model} spin={model.format === 'spin' ? 0 : 0.25} position={[0, 0.16, 0]} cameraDriven />
           </Suspense>
           <OrbitControls target={[0, 0.16 + (model.height || 1.7) / 2, 0]} enablePan={false} minDistance={1} maxDistance={8} />
         </Canvas>

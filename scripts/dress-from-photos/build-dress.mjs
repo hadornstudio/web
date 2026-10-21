@@ -167,10 +167,49 @@ function traceAt(y) {
 }
 const hOfSideRow = (y) => 1 - (y - sm.top) / (sm.bottom - sm.top);
 const SL_ROWS = 90, SL_SEG = 28;
+
+/*
+ * How the sleeve joins the shoulder.
+ *
+ * The sleeve is a tube whose outer face sits on the dress silhouette
+ * (`outerHW`, measured from the front photo, which at those rows includes the
+ * sleeve itself). The torso is built from `halfW`, the body alone. Above the
+ * bust those two part company — the shoulder slopes in, the silhouette does
+ * not — so the tube ended in mid-air beside the shoulder with a dark slot
+ * between them and a flat, square top edge cut across it. That is the "weird
+ * armpit": not a texture problem, a join that was never made.
+ *
+ * Over the top of the sleeve we therefore do two things:
+ *   - pull the tube inward until its end is *inside* the torso, so the flat
+ *     cap is buried and the sleeve reads as emerging from under the shoulder;
+ *   - fatten it inward so no gap can open between the two surfaces on the way.
+ */
+const SHOULDER_BLEND = 0.22;   // top fraction of the sleeve that tucks into the shoulder
+
 function sleeveSection(t) { // t: 0 at the shoulder, 1 at the cuff
   const y = lerp(SLEEVE_TOP_Y, CUFF_Y, t), { xF, xB } = traceAt(y), h = hOfSideRow(y);
   const hi = clamp(Math.round(h * (ROWS - 1)), 0, ROWS - 1);
-  return { y, h, rz: ((xB - xF) / 2) * mpp, zc: (sAxis - (xF + xB) / 2) * mpp, rx: bandM / 2 * lerp(1, 0.85, t), outer: outerHW[hi] };
+  const rx0 = bandM / 2 * lerp(1, 0.85, t);
+  let outer = outerHW[hi], rx = rx0;
+
+  const k = 1 - smooth(0, SHOULDER_BLEND, t);   // 1 at the very top, 0 below the blend
+  if (k > 0) {
+    const body = halfW[hi];
+    // End the tube well inboard of the body surface so its cap sits inside the
+    // torso rather than showing as a ledge on the shoulder.
+    const tucked = body - rx0 * 1.25;
+    outer = lerp(outer, Math.min(outer, tucked + 2 * rx0), k);
+    // ...and make sure the inner face still reaches the body on the way down.
+    const needed = (outer - (body - rx0 * 0.9)) / 2;
+    rx = lerp(rx0, Math.max(rx0, needed), k);
+  }
+
+  // Narrow the tube front-to-back as it meets the shoulder, so the end cap is
+  // small enough to disappear inside the torso instead of cutting a flat edge
+  // across the silhouette.
+  const rzTaper = lerp(0.55, 1, smooth(0, SHOULDER_BLEND, t));
+
+  return { y, h, rz: ((xB - xF) / 2) * mpp * rzTaper, zc: (sAxis - (xF + xB) / 2) * mpp, rx, outer };
 }
 const slPos = [], slUV = [], slIdx = [];
 for (const side of [-1, 1]) {

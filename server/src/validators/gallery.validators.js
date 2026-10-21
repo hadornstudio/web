@@ -3,7 +3,9 @@ import { body } from 'express-validator';
 // Optional 3D model (see GalleryItem.model). An empty URL means "no model".
 const modelRules = [
   body('model.url').optional({ checkFalsy: true }).isString().isLength({ max: 500 }),
-  body('model.format').optional({ checkFalsy: true }).isIn(['splat', 'glb']),
+  body('model.format').optional({ checkFalsy: true }).isIn(['splat', 'glb', 'spin']),
+  body('model.frames').optional({ checkFalsy: true }).isInt({ min: 2, max: 2000 }),
+  body('model.mirrorFrom').optional().isInt({ min: -1, max: 1999 }),
   body('model.height').optional({ checkFalsy: true }).isFloat({ min: 0.1, max: 4 }),
   body('model.rotation').optional().isArray({ min: 3, max: 3 }),
   body('model.rotation.*').optional().isFloat({ min: -360, max: 360 }),

@@ -12,11 +12,14 @@ const modelSchema = new Schema(
       trim: true,
       maxlength: 500,
       validate: {
-        validator: (v) => !v || /^https:\/\//.test(v) || v.startsWith('/models/'),
-        message: 'Model URL must be https:// or a /models/ path',
+        validator: (v) => !v || /^https:\/\//.test(v) || v.startsWith('/models/') || v.startsWith('/spin/'),
+        message: 'Model URL must be https:// or a /models/ or /spin/ path',
       },
     },
-    format: { type: String, enum: ['splat', 'glb'], default: 'splat' },
+    // spin = frames of a turntable video (url is the folder, ending in /); frames/mirrorFrom describe the clip
+    format: { type: String, enum: ['splat', 'glb', 'spin'], default: 'splat' },
+    frames: { type: Number, min: 2, max: 2000 },
+    mirrorFrom: { type: Number, min: -1, max: 1999, default: -1 },
     height: { type: Number, min: 0.1, max: 4, default: 1.7 },
     rotation: {
       type: [Number],

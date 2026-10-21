@@ -14,7 +14,7 @@ import { toast } from '../../store/useToastStore';
 // three.js loads only when the owner actually opens the 3D preview.
 const ModelPreview = lazy(() => import('../../components/admin/ModelPreview'));
 
-const EMPTY_MODEL = { url: '', format: 'splat', height: 1.7, rotation: [0, 0, 0], offsetY: 0 };
+const EMPTY_MODEL = { url: '', format: 'splat', height: 1.7, rotation: [0, 0, 0], offsetY: 0, frames: '', mirrorFrom: -1 };
 const EMPTY_FORM = { title: '', description: '', images: [], category: '', product: '', sortOrder: 0, isActive: true, model: EMPTY_MODEL };
 
 function toFormState(item) {
@@ -100,6 +100,7 @@ export default function AdminGalleryFormPage() {
             height: Number(form.model.height) || 1.7,
             rotation: form.model.rotation.map(Number),
             offsetY: Number(form.model.offsetY) || 0,
+            ...(form.model.format === 'spin' ? { frames: Number(form.model.frames) || undefined, mirrorFrom: Number(form.model.mirrorFrom) } : {}),
           }
         : null,
     };
@@ -194,7 +195,19 @@ export default function AdminGalleryFormPage() {
               <Select label="File type" value={form.model.format} onChange={(e) => setModel({ format: e.target.value })}>
                 <option value="splat">Gaussian splat (.splat)</option>
                 <option value="glb">3D mesh (.glb)</option>
+                <option value="spin">Photo spin (frames of a turntable video)</option>
               </Select>
+              {form.model.format === 'spin' && (
+                <>
+                  <p className="text-xs text-stone-600">
+                    A photo spin is the frames of a video of the piece turning, cut out from the backdrop. Create them with{' '}
+                    <code>scripts/dress-from-photos/spin-frames.mjs</code>, upload them with <code>scripts/upload-spin.js</code>, then paste the
+                    folder link above (it ends in a <code>/</code>) and fill in the two numbers.
+                  </p>
+                  <Input label="Number of frames" type="number" value={form.model.frames} onChange={(e) => setModel({ frames: e.target.value })} />
+                  <Input label="Mirror-fill frames (−1 if the clip is a full turn)" type="number" value={form.model.mirrorFrom} onChange={(e) => setModel({ mirrorFrom: e.target.value })} />
+                </>
+              )}
               <Suspense fallback={<Spinner />}>
                 <ModelPreview model={form.model} />
               </Suspense>
@@ -208,7 +221,7 @@ export default function AdminGalleryFormPage() {
                   <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => setModel({ [key]: Number(e.target.value) })} className="mt-1 block w-full accent-[var(--color-accent)]" />
                 </label>
               ))}
-              {['Tilt forward / back (X)', 'Turn (Y)', 'Lean sideways (Z)'].map((label, axis) => (
+              {form.model.format !== 'spin' && ['Tilt forward / back (X)', 'Turn (Y)', 'Lean sideways (Z)'].map((label, axis) => (
                 <label key={label} className="block text-sm text-stone-600">
                   {label}: <span className="text-ink">{form.model.rotation[axis]}°</span>
                   <input type="range" min={-180} max={180} step={1} value={form.model.rotation[axis]} onChange={(e) => setRotation(axis, e.target.value)} className="mt-1 block w-full accent-[var(--color-accent)]" />

@@ -12,7 +12,7 @@ function sanitizeRefFields(body) {
   if (!payload.category) delete payload.category;
   // No model URL = no model: drop the whole sub-document (and clear it on update) instead of storing defaults.
   if (!payload.model?.url) payload.model = undefined;
-  else payload.model = { ...payload.model, format: payload.model.format || (/\.glb(\?|$)/i.test(payload.model.url) ? 'glb' : 'splat') };
+  else payload.model = { ...payload.model, format: payload.model.format || (/\/$/.test(payload.model.url) ? 'spin' : /\.glb(\?|$)/i.test(payload.model.url) ? 'glb' : 'splat') };
   return payload;
 }
 

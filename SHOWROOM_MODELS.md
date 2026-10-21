@@ -34,6 +34,28 @@ Or use a capture app instead:
 Use any Gaussian-splat capture tool and export a **.ply** (or a **.splat**). Examples: Luma, Polycam, KIRI Engine (upload
 the video in the app), or Brush / OpenSplat on a Mac (run locally, slower but private).
 
+### Photo spin: the best-looking option (a turntable video of the piece)
+
+If you have (or can generate) a video of the piece turning on a mannequin against a plain backdrop, the showroom can play it
+as a photographic spin: the frames are cut out from the backdrop and the visitor drags to turn the piece through them, so it
+looks exactly like the video, beads and all. It cannot zoom past the video's resolution, shows one camera height, and has no
+"see it in your room" mode; a 3D model (below) covers those.
+
+```bash
+# 1. all frames of the video + a cutout of each (macOS Vision; mask.swift is in scripts/dress-from-photos/)
+ffmpeg -i video.mp4 -vf scale=1080:-2 -q:v 2 work/frames/f_%04d.jpg
+for f in work/frames/*.jpg; do ./mask "$f" "work/masks/$(basename "$f").png"; done
+# 2. transparent, cropped WebP frames
+node scripts/dress-from-photos/spin-frames.mjs work/frames work/masks client/public/spin/<name> 720
+# 3. upload to Cloudinary and get the values for the admin
+node --env-file=server/.env scripts/upload-spin.js client/public/spin/<name> <name>
+```
+
+Then Admin -> Gallery -> 3D model -> File type **Photo spin**, paste the printed folder link (it ends in `/`), the number of
+frames and the mirror-fill value. If the video turns less than 360 degrees, the rest is filled by playing the first N frames
+backwards, mirrored (fine for a near-symmetrical gown, wrong for anything with a one-sided detail): choose N as the frames up to
+the moment you are looking at the gown from the side. Use -1 when the clip is a full turn.
+
 ### No orbit video? Build it from a few studio photos
 
 A handful of clean studio photos (one front, one back, one side, all full-length on a plain backdrop, same distance, plus

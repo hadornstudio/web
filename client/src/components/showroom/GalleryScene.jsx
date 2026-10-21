@@ -454,7 +454,7 @@ function SceneContents({ works, index, instant, inputRef, onSelect, inspecting, 
           key={work.id}
           work={work}
           index={i}
-          near={loaded.has(i) && (work.model?.format !== 'splat' || (index < 0 ? i < 2 : Math.abs(i - index) <= 1))}
+          near={loaded.has(i) && (!['splat', 'spin'].includes(work.model?.format) || (index < 0 ? i < 2 : Math.abs(i - index) <= 1))}
           glowTex={glowTex}
           active={i === index}
           inspecting={inspecting}

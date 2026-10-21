@@ -2,6 +2,7 @@ import { use, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Splat, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import SpinPiece from './SpinPiece';
 
 // The converter script (scripts/ply-to-splat.mjs) normalises captures to this height, so `model.height` is a scale
 // relative to it. Files that did not go through the converter can be sized by hand in the admin preview.
@@ -55,7 +56,12 @@ function GlbPiece({ url, height }) {
 //   model       { url, format, height, rotation: [x, y, z] degrees, offsetY }
 //   inputRef    showroom gesture state; `orbitS` (smoothed drag) is added to the idle spin while inspecting
 //   spin        idle turntable speed in rad/s (0 = still)
-export default function DressModel({ model, inputRef, spin = 0.18, position = [0, 0, 0] }) {
+export default function DressModel(props) {
+  // A photographic turntable (frames of a video) is a different kind of object from a mesh or splat.
+  return props.model.format === 'spin' ? <SpinPiece {...props} /> : <MeshPiece {...props} />;
+}
+
+function MeshPiece({ model, inputRef, spin = 0.18, position = [0, 0, 0] }) {
   const group = useRef();
   const base = useRef(0);
   const [rx, ry, rz] = model.rotation || [0, 0, 0];
