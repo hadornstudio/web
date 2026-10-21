@@ -8,7 +8,10 @@
 //                    centre line. Use it when a capture includes the room around the dress.
 //     --up AXIS      which capture axis points up: +x -x +y -y +z -z (default -y, typical of COLMAP-based tools)
 //     --height M     scale so the subject is M metres tall (default 1.7). The viewer then only needs fine-tuning.
-//     --opacity T    drop splats with opacity below T, 0-1 (default 0.06)
+//     --opacity T    drop splats with opacity below T, 0-1 (default 0.06; 0.15-0.25 removes more haze)
+//     --max-size M   drop splats bigger than M metres across (after scaling). Backdrop and haze are made of big splats;
+//                    beads and fabric detail are small. 0.08 is a good starting point for a gown. Default off.
+//                    (Trained splats are mostly flat discs, so do not filter on shape.)
 // The result is centred on the origin, standing on y = 0, sorted most-visible first.
 import { readFileSync, writeFileSync } from 'node:fs';
 
@@ -17,7 +20,7 @@ if (!inPath || !outPath) {
   console.error('usage: node scripts/ply-to-splat.mjs input.ply output.splat [--max N] [--crop P] [--up -y] [--height M] [--opacity T]');
   process.exit(1);
 }
-const opt = { max: 600000, crop: 'auto', radius: 0, up: '-y', height: 1.7, opacity: 0.06 };
+const opt = { max: 600000, crop: 'auto', radius: 0, up: '-y', height: 1.7, opacity: 0.06, 'max-size': 0 };
 for (let i = 0; i < rest.length; i += 2) opt[rest[i].replace(/^--/, '')] = isNaN(+rest[i + 1]) ? rest[i + 1] : +rest[i + 1];
 
 const file = readFileSync(inPath);
@@ -92,6 +95,7 @@ const ys = items.map((t) => t.pos[1]).sort((a, b) => a - b);
 const y0 = ys[Math.floor(ys.length * 0.01)];
 const y1 = ys[Math.floor(ys.length * 0.99)];
 const k = opt.height / Math.max(1e-6, y1 - y0);
+if (opt['max-size'] > 0) items = items.filter((t) => Math.max(...t.s) * k <= opt['max-size']);
 if (opt.radius > 0) items = items.filter((t) => Math.hypot(t.pos[0] - cx, t.pos[2] - cz) * k <= opt.radius);
 items = items.filter((t) => t.pos[1] >= y0 - 0.03 * (y1 - y0) && t.pos[1] <= y1 + 0.05 * (y1 - y0));
 

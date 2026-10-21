@@ -11,10 +11,25 @@ showroom shows only the items that have one; until then it falls back to the gal
 - **4K, 60–90 seconds.** Walk slowly around it keeping it centred: one full circle at chest height, one low, one high.
 - **Lock focus and exposure** (hold-to-lock on a phone) so brightness does not change between frames.
 - Keep every frame sharp: slow movement, no digital zoom, no filters or stabilisation crop if you can avoid it.
+- **One continuous orbit, no cuts.** Do not edit or splice the video, and do not mix close-ups into it; film close-ups
+  separately if you want them. AI-generated or edited "product videos" cannot be captured: the dress is not the same object from frame to frame.
 - Beads, sequins and sheer fabric are hard for any 3D capture. Expect to re-film a piece once; the first test video is
   the cheapest way to learn what works.
 
 ## 2. Turn the video into a splat
+
+Fastest, on this Mac (about an hour for a one-minute video, free, nothing leaves the machine):
+
+```bash
+scripts/video-to-splat.sh "/path/to/video.mp4" capture-work/my-piece
+```
+
+It extracts frames, works out the camera positions (COLMAP), trains the splat (Brush) and converts it. Before training it
+prints a **camera-path check**: if more than ~15% of the cameras sit at very different distances from the piece, the footage
+is not one steady orbit of a rigid object and the result will look shredded, so re-film instead of waiting for training.
+It needs `brew install ffmpeg colmap` and the Brush binary (github.com/ArthurBrussee/brush, release `brush-app-aarch64-apple-darwin`).
+
+Or use a capture app instead:
 
 Use any Gaussian-splat capture tool and export a **.ply** (or a **.splat**). Examples: Luma, Polycam, KIRI Engine (upload
 the video in the app), or Brush / OpenSplat on a Mac (run locally, slower but private).
@@ -26,7 +41,7 @@ node scripts/ply-to-splat.mjs capture.ply piece.splat --max 300000
 ```
 
 This centres the piece, stands it on the floor, scales it to 1.7 m tall, removes floaters and keeps the 300,000 most visible
-points (about 10 MB; fine on phones). Useful options: `--up +y|-y|+z|-z|+x|-x` (which way is up in the capture, default `-y`),
+points (about 10 MB; fine on phones). Useful options: `--opacity 0.25` and `--max-size 0.08` (remove haze and oversized backdrop splats), `--up +y|-y|+z|-z|+x|-x` (which way is up in the capture, default `-y`),
 `--height 1.5` (metres), `--radius 0.9` (cut away the room around the piece), `--max 600000` (more detail, bigger file).
 
 A `.glb` mesh also works and needs no conversion.
