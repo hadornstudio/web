@@ -20,7 +20,7 @@ function constrainedConnection() {
 // A full-HD film decoded is ~1.6 GB, which no browser keeps, so a plain <img> sequence re-decodes frames on the
 // main thread mid-scroll (the lag). Instead: keep every frame as a small compressed Blob, and decode only a window
 // around the playhead into ImageBitmaps (off the main thread, at the size the screen actually needs).
-function createStore(set, onFrame) {
+function createStore(set, onFrame, eager = false) {
   const n = set.frames;
   const blobs = new Array(n);
   const bitmaps = new Map();
@@ -112,7 +112,9 @@ function createStore(set, onFrame) {
     };
     await Promise.all(Array.from({ length: FETCH_POOL }, worker));
   };
-  whenIdle(run);
+  // A piece the visitor is about to look at should appear at once; the home film can wait for the page to settle.
+  if (eager) run();
+  else whenIdle(run);
 
   return {
     // Move the playhead; decodes the window around it.
@@ -148,13 +150,13 @@ function createStore(set, onFrame) {
   };
 }
 
-export function useFrameSequence(set, onFrame) {
+export function useFrameSequence(set, onFrame, { eager = false } = {}) {
   const storeRef = useRef(null);
   const onFrameRef = useRef(onFrame);
   onFrameRef.current = onFrame;
 
   useEffect(() => {
-    const store = createStore(set, (i) => onFrameRef.current?.(i));
+    const store = createStore(set, (i) => onFrameRef.current?.(i), eager);
     storeRef.current = store;
     return () => {
       store.close();

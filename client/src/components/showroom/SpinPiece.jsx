@@ -25,8 +25,8 @@ export default function SpinPiece({ model, inputRef, spin = 0.18, position = [0,
   // two decoders: one follows the real run, one the mirrored run (they can be far apart while crossfading)
   const baseSet = useMemo(() => ({ base: model.url, frames: F, width: 720, height: 1188, pad: 4, ext: 'webp' }), [model.url, F]); // width/height are only a size hint for decoding
   const mirrorSet = useMemo(() => ({ ...baseSet, frames: Math.min(F, (MF >= 0 ? MF : 0) + BLEND + 8) }), [baseSet, MF, F]);
-  const realRef = useFrameSequence(baseSet);
-  const mirRef = useFrameSequence(mirrorSet);
+  const realRef = useFrameSequence(baseSet, undefined, { eager: true });
+  const mirRef = useFrameSequence(mirrorSet, undefined, { eager: true });
 
   const canvas = useMemo(() => Object.assign(document.createElement('canvas'), { width: 720, height: 1188 }), []);
   const texture = useMemo(() => {
