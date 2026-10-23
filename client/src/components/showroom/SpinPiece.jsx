@@ -28,15 +28,23 @@ export default function SpinPiece({ model, inputRef, spin = 0.18, position = [0,
   const realRef = useFrameSequence(baseSet, undefined, { eager: true });
   const mirRef = useFrameSequence(mirrorSet, undefined, { eager: true });
 
-  const canvas = useMemo(() => Object.assign(document.createElement('canvas'), { width: 720, height: 1188 }), []);
-  const texture = useMemo(() => {
-    const t = new THREE.CanvasTexture(canvas);
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.generateMipmaps = false;
-    t.minFilter = t.magFilter = THREE.LinearFilter;
-    return t;
-  }, [canvas]);
-  useEffect(() => () => texture.dispose(), [texture]);
+  // The canvas/texture are created at the frames' real size on the first decoded frame (a texture cannot change size once
+  // uploaded, and different pieces have different frame shapes).
+  const surf = useRef(null); // { canvas, ctx, texture }
+  const matRef = useRef();
+  useEffect(() => () => { surf.current?.texture.dispose(); surf.current = null; }, []);
+  const ensureSurface = (w, h) => {
+    if (surf.current && surf.current.canvas.width === w && surf.current.canvas.height === h) return surf.current;
+    surf.current?.texture.dispose();
+    const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.generateMipmaps = false;
+    texture.minFilter = texture.magFilter = THREE.LinearFilter;
+    surf.current = { canvas, ctx: canvas.getContext('2d'), texture };
+    if (matRef.current) { matRef.current.map = texture; matRef.current.needsUpdate = true; }
+    return surf.current;
+  };
 
   const group = useRef(), mesh = useRef();
   const base = useRef(0), last = useRef({ key: '', p: 0 }), aspect = useRef(0.606);
@@ -80,17 +88,17 @@ export default function SpinPiece({ model, inputRef, spin = 0.18, position = [0,
 
     const key = layers.map(([{ idx, flip, dec }, w]) => `${idx}${flip ? 'f' : dec || 'r'}${w.toFixed(2)}`).join('|');
     if (key === last.current.key) return;
-    const ctx = canvas.getContext('2d');
-    let drew = false;
+    // find the frame size from whichever layer is decoded
+    const first = layers.map(([{ idx, flip, dec }]) => (flip || dec === 'm' ? mirRef : realRef).current?.nearest(idx)).find(Boolean);
+    if (!first) return;
+    const { canvas, ctx, texture } = ensureSurface(first.width, first.height);
     ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.globalCompositeOperation = 'lighter'; // premultiplied add = a true crossfade, no see-through dip
+    let drew = false;
     for (const [{ idx, flip, dec }, w] of layers) {
       const bmp = (flip || dec === 'm' ? mirRef : realRef).current?.nearest(idx);
       if (!bmp || w <= 0.001) continue;
-      if (canvas.width !== bmp.width || canvas.height !== bmp.height) { // frames of different pieces have different shapes; only ever happens before the first upload
-        canvas.width = bmp.width; canvas.height = bmp.height; ctx.globalCompositeOperation = 'lighter';
-      }
       ctx.globalAlpha = layers.length > 1 ? w : 1;
       if (flip) { ctx.save(); ctx.translate(canvas.width, 0); ctx.scale(-1, 1); ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height); ctx.restore(); }
       else ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
@@ -110,7 +118,7 @@ export default function SpinPiece({ model, inputRef, spin = 0.18, position = [0,
       <group ref={group}>
         <mesh ref={mesh} position={[0, height / 2, 0]} visible={false}>
           <planeGeometry args={[1, 1]} />
-          <meshBasicMaterial map={texture} transparent alphaTest={0.04} toneMapped={false} side={THREE.DoubleSide} />
+          <meshBasicMaterial ref={matRef} transparent alphaTest={0.04} toneMapped={false} side={THREE.DoubleSide} />
         </mesh>
       </group>
     </group>
